@@ -283,7 +283,9 @@ export const Config = {
     legendFont: { family: '', size: 13, weight: 500, color: '#666666', italic: false },
     bar1LabelFont: { family: '', size: 12, weight: 400, color: '#333333', italic: false },
     bar2LabelFont: { family: '', size: 12, weight: 400, color: '#333333', italic: false },
+    lineLabelFont: { family: '', size: 12, weight: 400, color: '#333333', italic: false },
     tooltipFont: { family: '', size: 12, weight: 400, color: '#ffffff', italic: false },
+    titleFont: { family: '', size: 18, weight: 600, color: '#333333', italic: false },
 
     // Dashboard Controls
     showSettingsCog: true,

@@ -221,10 +221,11 @@ function App() {
           <div className="header-left">
             {config.titleShow !== false && (
               <h3 className="chart-title" style={{
-                fontFamily: config.fontFamily || 'inherit',
-                fontSize: (config.titleFontSize || 18) + 'px',
-                fontWeight: config.titleWeight || 600,
-                color: config.titleColor || 'var(--color-text)'
+                fontFamily: (config.titleFont?.family) || config.fontFamily || 'inherit',
+                fontSize: (config.titleFont?.size || config.titleFontSize || 18) + 'px',
+                fontWeight: config.titleFont?.weight || config.titleWeight || 600,
+                fontStyle: config.titleFont?.italic ? 'italic' : 'normal',
+                color: config.titleFont?.color || config.titleColor || 'var(--color-text)'
               }}>
                 {config.titleText || 'Combo Chart'}
               </h3>

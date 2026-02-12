@@ -366,6 +366,7 @@ function ComboChart({ data, columns, config }) {
       if (config.barLabelsShow) {
         const b1Font = resolveFont('bar1LabelFont')
         const b2Font = resolveFont('bar2LabelFont')
+        const barLabelFmt = getFormatter(config.barLabelsFormat, config.barLabelsDecimals, config.barLabelsCurrencySymbol)
 
         if (hasBar1) {
           barGroup.append('text')
@@ -382,7 +383,7 @@ function ComboChart({ data, columns, config }) {
             .style('font-weight', b1Font.weight)
             .style('font-style', b1Font.italic ? 'italic' : 'normal')
             .attr('fill', b1Font.color)
-            .text(d => d.bar1.toFixed(0))
+            .text(d => barLabelFmt ? barLabelFmt(d.bar1) : d3.format(',')(d.bar1))
             .style('opacity', 0)
             .transition()
             .duration(config.animationEnabled ? config.animationDuration : 0)
@@ -404,7 +405,7 @@ function ComboChart({ data, columns, config }) {
             .style('font-weight', b2Font.weight)
             .style('font-style', b2Font.italic ? 'italic' : 'normal')
             .attr('fill', b2Font.color)
-            .text(d => d.bar2.toFixed(0))
+            .text(d => barLabelFmt ? barLabelFmt(d.bar2) : d3.format(',')(d.bar2))
             .style('opacity', 0)
             .transition()
             .duration(config.animationEnabled ? config.animationDuration : 0)
@@ -597,6 +598,8 @@ function ComboChart({ data, columns, config }) {
 
         // Line labels
         if (config.lineLabelsShow) {
+          const lineLabelFmt = getFormatter(config.lineLabelsFormat, config.lineLabelsDecimals, config.lineLabelsCurrencySymbol)
+          const llFont = resolveFont('lineLabelFont')
           pointsGroup.selectAll('.line-label')
             .data(chartData)
             .enter().append('text')
@@ -608,11 +611,12 @@ function ComboChart({ data, columns, config }) {
               return yRight(d.line) + 5
             })
             .attr('text-anchor', 'middle')
-            .attr('font-size', config.lineLabelsFontSize)
-            .style('font-family', fontFamily)
-            .style('font-weight', labelWeight)
-            .attr('fill', config.lineLabelsColor)
-            .text(d => d.line.toFixed(0))
+            .attr('font-size', llFont.size + 'px')
+            .style('font-family', llFont.family)
+            .style('font-weight', llFont.weight)
+            .style('font-style', llFont.italic ? 'italic' : 'normal')
+            .attr('fill', llFont.color)
+            .text(d => lineLabelFmt ? lineLabelFmt(d.line) : d3.format(',')(d.line))
             .style('opacity', 0)
             .transition()
             .duration(config.animationEnabled ? config.animationDuration : 0)
@@ -826,7 +830,7 @@ function ComboChart({ data, columns, config }) {
         content += `${measureName}: `
       }
       if (config.tooltipShowValue) {
-        content += `${value.toFixed(2)}`
+        content += `${d3.format(',.2f')(value)}`
       }
 
       tooltip

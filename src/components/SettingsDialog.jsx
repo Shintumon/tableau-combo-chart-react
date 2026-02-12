@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Config } from '../utils/config'
 
 function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDialog = false, debugLogs: externalDebugLogs, onClearDebugLogs, workbookFont }) {
@@ -10,61 +10,42 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
   const [fontOptions, setFontOptions] = useState(() => Config.fontFamilies)
   const debugContentRef = useRef(null)
 
-  // Use external debug logs from DialogApp (captures from module load)
   const debugLogs = externalDebugLogs || []
 
-  // Auto-scroll debug content
   useEffect(() => {
     if (debugContentRef.current && activeTab === 'debug') {
       debugContentRef.current.scrollTop = debugContentRef.current.scrollHeight
     }
   }, [debugLogs, activeTab])
 
-  // Keyboard shortcut: Ctrl+Shift+D to show debug tab
   useEffect(() => {
     if (!isDialog) return
-
     const handleKeyDown = (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'D') {
         e.preventDefault()
         setShowDebugTab(prev => {
-          if (!prev) {
-            setActiveTab('debug')
-          }
+          if (!prev) setActiveTab('debug')
           return !prev
         })
       }
     }
-
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isDialog])
 
-  // Load system fonts asynchronously and build the font dropdown options
   useEffect(() => {
     Config.getSystemFonts().then(systemFonts => {
       const options = []
-
-      // Add workbook font as first option if detected
       if (workbookFont?.family) {
         const primaryName = workbookFont.family.replace(/['"]/g, '').split(',')[0].trim()
-        options.push({
-          value: workbookFont.family,
-          label: `${primaryName} (Workbook Default)`,
-          primary: primaryName,
-          isDefault: true
-        })
-        // Separator placeholder
+        options.push({ value: workbookFont.family, label: `${primaryName} (Workbook Default)`, primary: primaryName, isDefault: true })
         options.push({ value: '__separator__', label: '───────────', disabled: true })
       }
-
-      // Add system fonts, skipping the workbook font if it's already listed
       const wbPrimary = workbookFont?.family?.replace(/['"]/g, '').split(',')[0].trim().toLowerCase()
       systemFonts.forEach(font => {
         if (wbPrimary && font.primary.toLowerCase() === wbPrimary) return
         options.push(font)
       })
-
       setFontOptions(options)
     })
   }, [workbookFont])
@@ -73,19 +54,14 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     setLocalConfig(prev => ({ ...prev, [key]: value }))
   }
 
-  const handleSave = () => {
-    onSave(localConfig)
-  }
-
-  const handleReset = () => {
-    setLocalConfig({ ...config })
-  }
+  const handleSave = () => onSave(localConfig)
+  const handleReset = () => setLocalConfig({ ...config })
 
   const handleApplyPalette = (paletteId) => {
     const palette = Config.colorPalettes[paletteId]
     if (palette && palette.colors.length >= 3) {
-      const updated = {
-        ...localConfig,
+      setLocalConfig(prev => ({
+        ...prev,
         colorPalette: paletteId,
         bar1Color: palette.colors[0],
         bar2Color: palette.colors[1],
@@ -93,12 +69,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
         pointFill: palette.colors[2],
         bar1BorderColor: Config.darkenColor(palette.colors[0], 20),
         bar2BorderColor: Config.darkenColor(palette.colors[1], 20)
-      }
-      setLocalConfig(updated)
+      }))
     }
   }
 
-  // Helper to update nested font object properties
   const updateFont = (fontKey, prop, value) => {
     setLocalConfig(prev => ({
       ...prev,
@@ -106,42 +80,55 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     }))
   }
 
+  // Reusable number stepper component
+  const NumberStepper = ({ value, onChange, min, max, step = 1, suffix = '' }) => {
+    const handleInput = (e) => {
+      const raw = e.target.value
+      if (raw === '' || raw === '-') return
+      let num = parseFloat(raw)
+      if (!isNaN(num)) {
+        num = Math.min(max, Math.max(min, num))
+        onChange(step < 1 ? parseFloat(num.toFixed(2)) : Math.round(num))
+      }
+    }
+    return (
+      <div className="number-stepper">
+        <button type="button" onClick={() => onChange(Math.max(min, parseFloat(((value || 0) - step).toFixed(2))))} disabled={value <= min}>&minus;</button>
+        <input type="number" value={value} min={min} max={max} step={step}
+          onChange={handleInput} onBlur={handleInput} />
+        {suffix && <span className="stepper-suffix">{suffix}</span>}
+        <button type="button" onClick={() => onChange(Math.min(max, parseFloat(((value || 0) + step).toFixed(2))))} disabled={value >= max}>+</button>
+      </div>
+    )
+  }
+
   // Reusable font controls component
-  const FontControls = ({ fontKey, label }) => {
+  const FontControls = ({ fontKey, label, sizeMin = 8, sizeMax = 24 }) => {
     const font = localConfig[fontKey] || {}
     return (
       <div className="font-controls-group">
         <div className="section-label">{label} Font</div>
         <div className="form-group indent">
           <label className="form-label">Font Family</label>
-          <select
-            value={font.family || ''}
-            onChange={(e) => updateFont(fontKey, 'family', e.target.value)}
-            style={{ fontFamily: font.family || localConfig.fontFamily }}
-          >
+          <select value={font.family || ''} onChange={(e) => updateFont(fontKey, 'family', e.target.value)}
+            style={{ fontFamily: font.family || localConfig.fontFamily }}>
             <option value="">Use Global Font</option>
             {fontOptions.map((f, i) => (
               f.value === '__separator__'
                 ? <option key={`sep-${i}`} disabled>───────────</option>
-                : <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
-                    {f.label}
-                  </option>
+                : <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
             ))}
           </select>
         </div>
         <div className="form-row indent">
           <div className="form-group">
             <label className="form-label">Size</label>
-            <div className="slider-row">
-              <input type="range" min="8" max="24" value={font.size || 12}
-                onChange={(e) => updateFont(fontKey, 'size', parseInt(e.target.value))} />
-              <span className="slider-val">{font.size || 12}px</span>
-            </div>
+            <NumberStepper value={font.size || 12} min={sizeMin} max={sizeMax} suffix="px"
+              onChange={(v) => updateFont(fontKey, 'size', v)} />
           </div>
           <div className="form-group">
             <label className="form-label">Weight</label>
-            <select value={String(font.weight || 400)}
-              onChange={(e) => updateFont(fontKey, 'weight', parseInt(e.target.value))}>
+            <select value={String(font.weight || 400)} onChange={(e) => updateFont(fontKey, 'weight', parseInt(e.target.value))}>
               <option value="300">Light</option>
               <option value="400">Normal</option>
               <option value="500">Medium</option>
@@ -153,12 +140,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
         <div className="inline-row indent">
           <div className="color-item compact">
             <label>Color</label>
-            <input type="color" value={font.color || '#666666'}
-              onChange={(e) => updateFont(fontKey, 'color', e.target.value)} />
+            <input type="color" value={font.color || '#666666'} onChange={(e) => updateFont(fontKey, 'color', e.target.value)} />
           </div>
           <label className="check-row compact">
-            <input type="checkbox" checked={font.italic || false}
-              onChange={(e) => updateFont(fontKey, 'italic', e.target.checked)} />
+            <input type="checkbox" checked={font.italic || false} onChange={(e) => updateFont(fontKey, 'italic', e.target.checked)} />
             <span>Italic</span>
           </label>
         </div>
@@ -169,36 +154,28 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
   const hasChanges = JSON.stringify(localConfig) !== JSON.stringify(config)
 
   const tabs = [
-    { id: 'data', label: 'Data Mapping' },
-    { id: 'appearance', label: 'Appearance' },
+    { id: 'data', label: 'Data' },
+    { id: 'general', label: 'General' },
     { id: 'colors', label: 'Colors' },
     { id: 'bars', label: 'Bars' },
-    { id: 'line', label: 'Line & Points' },
+    { id: 'line', label: 'Line' },
     { id: 'axes', label: 'Axes' },
-    { id: 'grid', label: 'Grid & Title' },
+    { id: 'title', label: 'Title & Grid' },
     { id: 'labels', label: 'Labels' },
     { id: 'legend', label: 'Legend' },
     { id: 'tooltip', label: 'Tooltip' },
-    { id: 'animation', label: 'Animation' },
     ...(showDebugTab ? [{ id: 'debug', label: 'Debug' }] : [])
   ]
 
-  // Separate dimensions and measures from columns
   const dimensions = columns.filter(col =>
     col.dataType === 'string' || col.dataType === 'date' || col.dataType === 'date-time'
   )
   const measures = columns.filter(col =>
     col.dataType === 'float' || col.dataType === 'int'
   )
-
-  // Filter measures: exclude already-selected fields from other dropdowns
   const getAvailableMeasures = (currentField) => {
-    const selectedMeasures = [
-      localConfig.bar1Measure,
-      localConfig.bar2Measure,
-      localConfig.lineMeasure
-    ].filter(f => f && f !== currentField)
-    return measures.filter(m => !selectedMeasures.includes(m.fieldName))
+    const selected = [localConfig.bar1Measure, localConfig.bar2Measure, localConfig.lineMeasure].filter(f => f && f !== currentField)
+    return measures.filter(m => !selected.includes(m.fieldName))
   }
 
   return (
@@ -224,7 +201,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
           </nav>
 
           <div className="dialog-content">
-            {/* DATA MAPPING TAB */}
+
+            {/* ═══ DATA MAPPING ═══ */}
             {activeTab === 'data' && (
               <div className="settings-tab">
                 <div className="tab-header">
@@ -235,60 +213,41 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 <div className="field-grid">
                   <div className="field-card">
                     <div className="field-card-label">Category (X-Axis)</div>
-                    <select
-                      value={localConfig.dimension}
-                      onChange={(e) => updateConfig('dimension', e.target.value)}
-                    >
+                    <select value={localConfig.dimension}
+                      onChange={(e) => updateConfig('dimension', e.target.value)}>
                       <option value="">None</option>
                       {dimensions.map(dim => (
-                        <option key={dim.fieldName} value={dim.fieldName}>
-                          {dim.fieldName}
-                        </option>
+                        <option key={dim.fieldName} value={dim.fieldName}>{dim.fieldName}</option>
                       ))}
                     </select>
                   </div>
-
                   <div className="field-card">
                     <div className="field-card-label">Bar 1 Measure</div>
-                    <select
-                      value={localConfig.bar1Measure}
-                      onChange={(e) => updateConfig('bar1Measure', e.target.value)}
-                    >
+                    <select value={localConfig.bar1Measure}
+                      onChange={(e) => updateConfig('bar1Measure', e.target.value)}>
                       <option value="">None</option>
                       {getAvailableMeasures(localConfig.bar1Measure).map(m => (
-                        <option key={m.fieldName} value={m.fieldName}>
-                          {m.fieldName}
-                        </option>
+                        <option key={m.fieldName} value={m.fieldName}>{m.fieldName}</option>
                       ))}
                     </select>
                   </div>
-
                   <div className="field-card">
                     <div className="field-card-label">Bar 2 Measure</div>
-                    <select
-                      value={localConfig.bar2Measure}
-                      onChange={(e) => updateConfig('bar2Measure', e.target.value)}
-                    >
+                    <select value={localConfig.bar2Measure}
+                      onChange={(e) => updateConfig('bar2Measure', e.target.value)}>
                       <option value="">None</option>
                       {getAvailableMeasures(localConfig.bar2Measure).map(m => (
-                        <option key={m.fieldName} value={m.fieldName}>
-                          {m.fieldName}
-                        </option>
+                        <option key={m.fieldName} value={m.fieldName}>{m.fieldName}</option>
                       ))}
                     </select>
                   </div>
-
                   <div className="field-card">
                     <div className="field-card-label">Line Measure</div>
-                    <select
-                      value={localConfig.lineMeasure}
-                      onChange={(e) => updateConfig('lineMeasure', e.target.value)}
-                    >
+                    <select value={localConfig.lineMeasure}
+                      onChange={(e) => updateConfig('lineMeasure', e.target.value)}>
                       <option value="">None</option>
                       {getAvailableMeasures(localConfig.lineMeasure).map(m => (
-                        <option key={m.fieldName} value={m.fieldName}>
-                          {m.fieldName}
-                        </option>
+                        <option key={m.fieldName} value={m.fieldName}>{m.fieldName}</option>
                       ))}
                     </select>
                   </div>
@@ -300,19 +259,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       <strong>Manual override</strong>
                       <span>Chart mappings differ from the marks card. These changes only affect what the chart renders, not the marks card itself.</span>
                     </div>
-                    <button
-                      className="btn-text"
-                      onClick={() => {
-                        setLocalConfig(prev => ({ ...prev, useManualMapping: false }))
-                        console.log('[Settings] Reset to encoding-based mode')
-                      }}
-                    >
+                    <button className="btn-text"
+                      onClick={() => { setLocalConfig(prev => ({ ...prev, useManualMapping: false })); console.log('[Settings] Reset to encoding-based mode') }}>
                       Reset
                     </button>
                   </div>
                 )}
 
-                {/* Show unmapped fields hint */}
                 {(() => {
                   const unmapped = []
                   if (!localConfig.dimension) unmapped.push('Category')
@@ -333,88 +286,42 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               </div>
             )}
 
-            {/* APPEARANCE TAB */}
-            {activeTab === 'appearance' && (
+            {/* ═══ GENERAL ═══ */}
+            {activeTab === 'general' && (
               <div className="settings-tab">
                 <div className="tab-header">
-                  <h3>Appearance</h3>
-                  <p>General chart layout and style</p>
+                  <h3>General</h3>
+                  <p>Theme, typography, animation and dashboard options</p>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Chart Height</label>
-                  <div className="slider-row">
-                    <input
-                      type="range" min="200" max="800"
-                      value={localConfig.height}
-                      onChange={(e) => updateConfig('height', parseInt(e.target.value))}
-                    />
-                    <span className="slider-val">{localConfig.height}px</span>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Theme</label>
+                    <select value={localConfig.theme}
+                      onChange={(e) => updateConfig('theme', e.target.value)}>
+                      <option value="light">Light</option>
+                      <option value="dark">Dark</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Chart Height</label>
+                    <NumberStepper value={localConfig.height} min={200} max={800} step={10} suffix="px"
+                      onChange={(v) => updateConfig('height', v)} />
                   </div>
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label">Theme</label>
-                  <select
-                    value={localConfig.theme}
-                    onChange={(e) => updateConfig('theme', e.target.value)}
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Bar Style</label>
-                  <select
-                    value={localConfig.barStyle}
-                    onChange={(e) => updateConfig('barStyle', e.target.value)}
-                  >
-                    <option value="grouped">Grouped</option>
-                    <option value="stacked">Stacked</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Axis Mode</label>
-                  <select
-                    value={localConfig.axisMode}
-                    onChange={(e) => updateConfig('axisMode', e.target.value)}
-                  >
-                    <option value="dual">Dual Axis</option>
-                    <option value="shared">Shared Axis</option>
-                  </select>
-                  <p className="help-text">
-                    {localConfig.axisMode === 'dual'
-                      ? 'Bars use the left Y-axis, line uses an independent right Y-axis. Best when measures have different scales.'
-                      : 'All measures share a single left Y-axis. Best when measures have similar ranges.'}
-                  </p>
-                </div>
-
-                {localConfig.axisMode === 'dual' && (
-                  <label className="check-row indent">
-                    <input type="checkbox" checked={localConfig.syncDualAxis}
-                      onChange={(e) => updateConfig('syncDualAxis', e.target.checked)} />
-                    <span>Sync Dual Axis Scales</span>
-                  </label>
-                )}
 
                 <div className="divider" />
                 <div className="section-label">Typography</div>
 
                 <div className="form-group">
                   <label className="form-label">Font Family</label>
-                  <select
-                    value={localConfig.fontFamily}
+                  <select value={localConfig.fontFamily}
                     onChange={(e) => updateConfig('fontFamily', e.target.value)}
-                    style={{ fontFamily: localConfig.fontFamily }}
-                  >
+                    style={{ fontFamily: localConfig.fontFamily }}>
                     {fontOptions.map((f, i) => (
                       f.value === '__separator__'
                         ? <option key={`sep-${i}`} disabled>───────────</option>
-                        : <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
-                            {f.label}
-                          </option>
+                        : <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
                     ))}
                   </select>
                 </div>
@@ -448,6 +355,38 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 </div>
 
                 <div className="divider" />
+                <div className="section-label">Animation</div>
+
+                <label className="check-row">
+                  <input type="checkbox" checked={localConfig.animationEnabled}
+                    onChange={(e) => updateConfig('animationEnabled', e.target.checked)} />
+                  <span>Enable Animations</span>
+                </label>
+
+                {localConfig.animationEnabled && (
+                  <div className="form-row indent">
+                    <div className="form-group">
+                      <label className="form-label">Duration</label>
+                      <NumberStepper value={localConfig.animationDuration} min={100} max={2000} step={100} suffix="ms"
+                        onChange={(v) => updateConfig('animationDuration', v)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Easing</label>
+                      <select value={localConfig.animationEasing}
+                        onChange={(e) => updateConfig('animationEasing', e.target.value)}>
+                        <option value="easeLinear">Linear</option>
+                        <option value="easeCubicOut">Cubic Out</option>
+                        <option value="easeCubicInOut">Cubic In-Out</option>
+                        <option value="easeElastic">Elastic</option>
+                        <option value="easeBounce">Bounce</option>
+                        <option value="easeBack">Back</option>
+                        <option value="easeQuad">Quadratic</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="divider" />
                 <div className="section-label">Dashboard Controls</div>
                 <p className="help-text">Control visibility of header buttons when embedded in a dashboard.</p>
 
@@ -456,7 +395,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     onChange={(e) => updateConfig('showSettingsCog', e.target.checked)} />
                   <span>Show Settings Button</span>
                 </label>
-
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.showRefreshButton}
                     onChange={(e) => updateConfig('showRefreshButton', e.target.checked)} />
@@ -465,14 +403,12 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
 
                 <div className="divider" />
                 <div className="section-label">Chart Separators</div>
-                <p className="help-text">Control the border lines between chart sections.</p>
 
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.showHeaderBorder}
                     onChange={(e) => updateConfig('showHeaderBorder', e.target.checked)} />
                   <span>Show Header Border</span>
                 </label>
-
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.showLegendBorder}
                     onChange={(e) => updateConfig('showLegendBorder', e.target.checked)} />
@@ -481,20 +417,18 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               </div>
             )}
 
-            {/* COLORS TAB */}
+            {/* ═══ COLORS ═══ */}
             {activeTab === 'colors' && (
               <div className="settings-tab">
                 <div className="tab-header">
                   <h3>Colors</h3>
-                  <p>Color palette and individual colors</p>
+                  <p>Color palette, individual colors and opacity</p>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Color Palette</label>
-                  <select
-                    value={localConfig.colorPalette}
-                    onChange={(e) => handleApplyPalette(e.target.value)}
-                  >
+                  <select value={localConfig.colorPalette}
+                    onChange={(e) => handleApplyPalette(e.target.value)}>
                     {Object.entries(Config.colorPalettes).map(([id, palette]) => (
                       <option key={id} value={id}>{palette.name}</option>
                     ))}
@@ -528,65 +462,68 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 </div>
 
                 <div className="divider" />
+                <div className="section-label">Opacity</div>
 
                 {[
-                  ['bar1Opacity', 'Bar 1 Opacity'],
-                  ['bar2Opacity', 'Bar 2 Opacity'],
-                  ['lineOpacity', 'Line Opacity']
+                  ['bar1Opacity', 'Bar 1'],
+                  ['bar2Opacity', 'Bar 2'],
+                  ['lineOpacity', 'Line']
                 ].map(([key, label]) => (
-                  <div className="form-group" key={key}>
-                    <label className="form-label">{label}</label>
-                    <div className="slider-row">
-                      <input type="range" min="0" max="1" step="0.1"
-                        value={localConfig[key]}
-                        onChange={(e) => updateConfig(key, parseFloat(e.target.value))} />
-                      <span className="slider-val">{(localConfig[key] * 100).toFixed(0)}%</span>
+                  <div className="form-row" key={key}>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label className="form-label">{label}</label>
+                    </div>
+                    <div className="form-group" style={{ flex: 0 }}>
+                      <NumberStepper value={Math.round(localConfig[key] * 100)} min={0} max={100} step={10} suffix="%"
+                        onChange={(v) => updateConfig(key, v / 100)} />
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* BARS TAB */}
+            {/* ═══ BARS ═══ */}
             {activeTab === 'bars' && (
               <div className="settings-tab">
                 <div className="tab-header">
                   <h3>Bars</h3>
-                  <p>Bar spacing, borders and corners</p>
+                  <p>Bar style, spacing, borders and corners</p>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Bar Padding</label>
-                  <div className="slider-row">
-                    <input type="range" min="0" max="0.5" step="0.05"
-                      value={localConfig.barPadding}
-                      onChange={(e) => updateConfig('barPadding', parseFloat(e.target.value))} />
-                    <span className="slider-val">{(localConfig.barPadding * 100).toFixed(0)}%</span>
+                  <label className="form-label">Bar Style</label>
+                  <select value={localConfig.barStyle}
+                    onChange={(e) => updateConfig('barStyle', e.target.value)}>
+                    <option value="grouped">Grouped</option>
+                    <option value="stacked">Stacked</option>
+                  </select>
+                </div>
+
+                <div className="divider" />
+                <div className="section-label">Spacing</div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Padding</label>
+                    <NumberStepper value={localConfig.barPadding} min={0} max={0.5} step={0.05}
+                      onChange={(v) => updateConfig('barPadding', v)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Width</label>
+                    <NumberStepper value={localConfig.barWidth} min={20} max={100} step={5} suffix="%"
+                      onChange={(v) => updateConfig('barWidth', v)} />
                   </div>
                 </div>
 
                 {localConfig.barStyle === 'grouped' && (
                   <div className="form-group">
                     <label className="form-label">Bar Gap</label>
-                    <div className="slider-row">
-                      <input type="range" min="0" max="20"
-                        value={localConfig.barGap}
-                        onChange={(e) => updateConfig('barGap', parseInt(e.target.value))} />
-                      <span className="slider-val">{localConfig.barGap}px</span>
-                    </div>
+                    <NumberStepper value={localConfig.barGap} min={0} max={20} suffix="px"
+                      onChange={(v) => updateConfig('barGap', v)} />
                   </div>
                 )}
 
-                <div className="form-group">
-                  <label className="form-label">Bar Width</label>
-                  <div className="slider-row">
-                    <input type="range" min="20" max="100"
-                      value={localConfig.barWidth}
-                      onChange={(e) => updateConfig('barWidth', parseInt(e.target.value))} />
-                    <span className="slider-val">{localConfig.barWidth}%</span>
-                  </div>
-                </div>
-
+                <div className="divider" />
                 <div className="section-label">Bar 1</div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.bar1ShowBorder}
@@ -602,21 +539,15 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     </div>
                     <div className="form-group compact">
                       <label className="form-label">Width</label>
-                      <div className="slider-row">
-                        <input type="range" min="1" max="5" value={localConfig.bar1BorderWidth}
-                          onChange={(e) => updateConfig('bar1BorderWidth', parseInt(e.target.value))} />
-                        <span className="slider-val">{localConfig.bar1BorderWidth}px</span>
-                      </div>
+                      <NumberStepper value={localConfig.bar1BorderWidth} min={1} max={5} suffix="px"
+                        onChange={(v) => updateConfig('bar1BorderWidth', v)} />
                     </div>
                   </div>
                 )}
                 <div className="form-group">
                   <label className="form-label">Corner Radius</label>
-                  <div className="slider-row">
-                    <input type="range" min="0" max="10" value={localConfig.bar1CornerRadius}
-                      onChange={(e) => updateConfig('bar1CornerRadius', parseInt(e.target.value))} />
-                    <span className="slider-val">{localConfig.bar1CornerRadius}px</span>
-                  </div>
+                  <NumberStepper value={localConfig.bar1CornerRadius} min={0} max={10} suffix="px"
+                    onChange={(v) => updateConfig('bar1CornerRadius', v)} />
                 </div>
 
                 <div className="section-label">Bar 2</div>
@@ -634,26 +565,20 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     </div>
                     <div className="form-group compact">
                       <label className="form-label">Width</label>
-                      <div className="slider-row">
-                        <input type="range" min="1" max="5" value={localConfig.bar2BorderWidth}
-                          onChange={(e) => updateConfig('bar2BorderWidth', parseInt(e.target.value))} />
-                        <span className="slider-val">{localConfig.bar2BorderWidth}px</span>
-                      </div>
+                      <NumberStepper value={localConfig.bar2BorderWidth} min={1} max={5} suffix="px"
+                        onChange={(v) => updateConfig('bar2BorderWidth', v)} />
                     </div>
                   </div>
                 )}
                 <div className="form-group">
                   <label className="form-label">Corner Radius</label>
-                  <div className="slider-row">
-                    <input type="range" min="0" max="10" value={localConfig.bar2CornerRadius}
-                      onChange={(e) => updateConfig('bar2CornerRadius', parseInt(e.target.value))} />
-                    <span className="slider-val">{localConfig.bar2CornerRadius}px</span>
-                  </div>
+                  <NumberStepper value={localConfig.bar2CornerRadius} min={0} max={10} suffix="px"
+                    onChange={(v) => updateConfig('bar2CornerRadius', v)} />
                 </div>
               </div>
             )}
 
-            {/* LINE & POINTS TAB */}
+            {/* ═══ LINE ═══ */}
             {activeTab === 'line' && (
               <div className="settings-tab">
                 <div className="tab-header">
@@ -665,11 +590,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
 
                 <div className="form-group">
                   <label className="form-label">Width</label>
-                  <div className="slider-row">
-                    <input type="range" min="1" max="10" value={localConfig.lineWidth}
-                      onChange={(e) => updateConfig('lineWidth', parseInt(e.target.value))} />
-                    <span className="slider-val">{localConfig.lineWidth}px</span>
-                  </div>
+                  <NumberStepper value={localConfig.lineWidth} min={1} max={10} suffix="px"
+                    onChange={(v) => updateConfig('lineWidth', v)} />
                 </div>
 
                 <div className="form-row">
@@ -730,11 +652,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       </div>
                       <div className="form-group">
                         <label className="form-label">Size</label>
-                        <div className="slider-row">
-                          <input type="range" min="2" max="15" value={localConfig.pointSize}
-                            onChange={(e) => updateConfig('pointSize', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.pointSize}px</span>
-                        </div>
+                        <NumberStepper value={localConfig.pointSize} min={2} max={15} suffix="px"
+                          onChange={(v) => updateConfig('pointSize', v)} />
                       </div>
                     </div>
                     <div className="inline-row indent">
@@ -750,11 +669,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       </div>
                       <div className="form-group compact">
                         <label className="form-label">Stroke Width</label>
-                        <div className="slider-row">
-                          <input type="range" min="0" max="5" value={localConfig.pointStrokeWidth}
-                            onChange={(e) => updateConfig('pointStrokeWidth', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.pointStrokeWidth}px</span>
-                        </div>
+                        <NumberStepper value={localConfig.pointStrokeWidth} min={0} max={5} suffix="px"
+                          onChange={(v) => updateConfig('pointStrokeWidth', v)} />
                       </div>
                     </div>
                   </>
@@ -762,14 +678,37 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               </div>
             )}
 
-            {/* AXES TAB */}
+            {/* ═══ AXES ═══ */}
             {activeTab === 'axes' && (
               <div className="settings-tab">
                 <div className="tab-header">
                   <h3>Axes</h3>
-                  <p>Axis visibility, labels and range</p>
+                  <p>Axis mode, visibility, labels and range</p>
                 </div>
 
+                <div className="form-group">
+                  <label className="form-label">Axis Mode</label>
+                  <select value={localConfig.axisMode}
+                    onChange={(e) => updateConfig('axisMode', e.target.value)}>
+                    <option value="dual">Dual Axis</option>
+                    <option value="shared">Shared Axis</option>
+                  </select>
+                  <p className="help-text">
+                    {localConfig.axisMode === 'dual'
+                      ? 'Bars use the left Y-axis, line uses an independent right Y-axis.'
+                      : 'All measures share a single left Y-axis.'}
+                  </p>
+                </div>
+
+                {localConfig.axisMode === 'dual' && (
+                  <label className="check-row">
+                    <input type="checkbox" checked={localConfig.syncDualAxis}
+                      onChange={(e) => updateConfig('syncDualAxis', e.target.checked)} />
+                    <span>Sync Dual Axis Scales</span>
+                  </label>
+                )}
+
+                <div className="divider" />
                 <div className="section-label">X Axis</div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.xAxisShow}
@@ -792,11 +731,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     )}
                     <div className="form-group indent">
                       <label className="form-label">Label Rotation</label>
-                      <div className="slider-row">
-                        <input type="range" min="-90" max="90" value={localConfig.xAxisRotation}
-                          onChange={(e) => updateConfig('xAxisRotation', parseInt(e.target.value))} />
-                        <span className="slider-val">{localConfig.xAxisRotation}&deg;</span>
-                      </div>
+                      <NumberStepper value={localConfig.xAxisRotation} min={-90} max={90} step={5} suffix="°"
+                        onChange={(v) => updateConfig('xAxisRotation', v)} />
                     </div>
                     <div className="check-group indent">
                       <label className="check-row">
@@ -851,25 +787,20 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Label Offset X</label>
-                        <div className="slider-row">
-                          <input type="range" min="-20" max="20" value={localConfig.xAxisLabelOffsetX}
-                            onChange={(e) => updateConfig('xAxisLabelOffsetX', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.xAxisLabelOffsetX}px</span>
-                        </div>
+                        <NumberStepper value={localConfig.xAxisLabelOffsetX} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('xAxisLabelOffsetX', v)} />
                       </div>
                       <div className="form-group">
                         <label className="form-label">Label Offset Y</label>
-                        <div className="slider-row">
-                          <input type="range" min="-20" max="30" value={localConfig.xAxisLabelOffsetY}
-                            onChange={(e) => updateConfig('xAxisLabelOffsetY', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.xAxisLabelOffsetY}px</span>
-                        </div>
+                        <NumberStepper value={localConfig.xAxisLabelOffsetY} min={-20} max={30} suffix="px"
+                          onChange={(v) => updateConfig('xAxisLabelOffsetY', v)} />
                       </div>
                     </div>
                     <FontControls fontKey="xAxisFont" label="X Axis" />
                   </>
                 )}
 
+                <div className="divider" />
                 <div className="section-label">Y Axis Left (Bars)</div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.yAxisLeftShow}
@@ -938,11 +869,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       {localConfig.yAxisLeftFormat !== 'auto' && (
                         <div className="form-group">
                           <label className="form-label">Decimals</label>
-                          <div className="slider-row">
-                            <input type="range" min="0" max="4" value={localConfig.yAxisLeftDecimals}
-                              onChange={(e) => updateConfig('yAxisLeftDecimals', parseInt(e.target.value))} />
-                            <span className="slider-val">{localConfig.yAxisLeftDecimals}</span>
-                          </div>
+                          <NumberStepper value={localConfig.yAxisLeftDecimals} min={0} max={4}
+                            onChange={(v) => updateConfig('yAxisLeftDecimals', v)} />
                         </div>
                       )}
                     </div>
@@ -968,25 +896,20 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Label Offset X</label>
-                        <div className="slider-row">
-                          <input type="range" min="-20" max="20" value={localConfig.yAxisLeftLabelOffsetX}
-                            onChange={(e) => updateConfig('yAxisLeftLabelOffsetX', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.yAxisLeftLabelOffsetX}px</span>
-                        </div>
+                        <NumberStepper value={localConfig.yAxisLeftLabelOffsetX} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('yAxisLeftLabelOffsetX', v)} />
                       </div>
                       <div className="form-group">
                         <label className="form-label">Label Offset Y</label>
-                        <div className="slider-row">
-                          <input type="range" min="-20" max="20" value={localConfig.yAxisLeftLabelOffsetY}
-                            onChange={(e) => updateConfig('yAxisLeftLabelOffsetY', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.yAxisLeftLabelOffsetY}px</span>
-                        </div>
+                        <NumberStepper value={localConfig.yAxisLeftLabelOffsetY} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('yAxisLeftLabelOffsetY', v)} />
                       </div>
                     </div>
                     <FontControls fontKey="yAxisLeftFont" label="Y Left Axis" />
                   </>
                 )}
 
+                <div className="divider" />
                 <div className="section-label">Y Axis Right (Line)</div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.yAxisRightShow}
@@ -1055,11 +978,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       {localConfig.yAxisRightFormat !== 'auto' && (
                         <div className="form-group">
                           <label className="form-label">Decimals</label>
-                          <div className="slider-row">
-                            <input type="range" min="0" max="4" value={localConfig.yAxisRightDecimals}
-                              onChange={(e) => updateConfig('yAxisRightDecimals', parseInt(e.target.value))} />
-                            <span className="slider-val">{localConfig.yAxisRightDecimals}</span>
-                          </div>
+                          <NumberStepper value={localConfig.yAxisRightDecimals} min={0} max={4}
+                            onChange={(v) => updateConfig('yAxisRightDecimals', v)} />
                         </div>
                       )}
                     </div>
@@ -1085,19 +1005,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Label Offset X</label>
-                        <div className="slider-row">
-                          <input type="range" min="-20" max="20" value={localConfig.yAxisRightLabelOffsetX}
-                            onChange={(e) => updateConfig('yAxisRightLabelOffsetX', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.yAxisRightLabelOffsetX}px</span>
-                        </div>
+                        <NumberStepper value={localConfig.yAxisRightLabelOffsetX} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('yAxisRightLabelOffsetX', v)} />
                       </div>
                       <div className="form-group">
                         <label className="form-label">Label Offset Y</label>
-                        <div className="slider-row">
-                          <input type="range" min="-20" max="20" value={localConfig.yAxisRightLabelOffsetY}
-                            onChange={(e) => updateConfig('yAxisRightLabelOffsetY', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.yAxisRightLabelOffsetY}px</span>
-                        </div>
+                        <NumberStepper value={localConfig.yAxisRightLabelOffsetY} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('yAxisRightLabelOffsetY', v)} />
                       </div>
                     </div>
                     <FontControls fontKey="yAxisRightFont" label="Y Right Axis" />
@@ -1106,11 +1020,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               </div>
             )}
 
-            {/* GRID & TITLE TAB */}
-            {activeTab === 'grid' && (
+            {/* ═══ TITLE & GRID ═══ */}
+            {activeTab === 'title' && (
               <div className="settings-tab">
                 <div className="tab-header">
-                  <h3>Grid & Title</h3>
+                  <h3>Title & Grid</h3>
                   <p>Chart title and grid lines</p>
                 </div>
 
@@ -1127,24 +1041,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       <input type="text" value={localConfig.titleText}
                         onChange={(e) => updateConfig('titleText', e.target.value)} />
                     </div>
-                    <div className="inline-row indent">
-                      <div className="form-group compact">
-                        <label className="form-label">Font Size</label>
-                        <div className="slider-row">
-                          <input type="range" min="10" max="36" value={localConfig.titleFontSize}
-                            onChange={(e) => updateConfig('titleFontSize', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.titleFontSize}px</span>
-                        </div>
-                      </div>
-                      <div className="color-item compact">
-                        <label>Color</label>
-                        <input type="color" value={localConfig.titleColor}
-                          onChange={(e) => updateConfig('titleColor', e.target.value)} />
-                      </div>
-                    </div>
+                    <FontControls fontKey="titleFont" label="Title" sizeMin={10} sizeMax={36} />
                   </>
                 )}
 
+                <div className="divider" />
                 <div className="section-label">Grid</div>
                 <div className="check-group">
                   <label className="check-row">
@@ -1167,18 +1068,15 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     </div>
                     <div className="form-group compact">
                       <label className="form-label">Opacity</label>
-                      <div className="slider-row">
-                        <input type="range" min="0" max="1" step="0.1" value={localConfig.gridOpacity}
-                          onChange={(e) => updateConfig('gridOpacity', parseFloat(e.target.value))} />
-                        <span className="slider-val">{(localConfig.gridOpacity * 100).toFixed(0)}%</span>
-                      </div>
+                      <NumberStepper value={Math.round(localConfig.gridOpacity * 100)} min={0} max={100} step={10} suffix="%"
+                        onChange={(v) => updateConfig('gridOpacity', v / 100)} />
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* LABELS TAB */}
+            {/* ═══ LABELS ═══ */}
             {activeTab === 'labels' && (
               <div className="settings-tab">
                 <div className="tab-header">
@@ -1205,24 +1103,39 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         </select>
                       </div>
                       <div className="form-group">
-                        <label className="form-label">Font Size</label>
-                        <div className="slider-row">
-                          <input type="range" min="8" max="24" value={localConfig.barLabelsFontSize}
-                            onChange={(e) => updateConfig('barLabelsFontSize', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.barLabelsFontSize}px</span>
-                        </div>
+                        <label className="form-label">Format</label>
+                        <select value={localConfig.barLabelsFormat}
+                          onChange={(e) => updateConfig('barLabelsFormat', e.target.value)}>
+                          <option value="auto">Auto</option>
+                          <option value="number">Number</option>
+                          <option value="currency">Currency</option>
+                          <option value="percent">Percent</option>
+                          <option value="compact">Compact (K/M/B)</option>
+                        </select>
                       </div>
                     </div>
-                    <div className="color-item compact indent">
-                      <label>Color</label>
-                      <input type="color" value={localConfig.barLabelsColor}
-                        onChange={(e) => updateConfig('barLabelsColor', e.target.value)} />
-                    </div>
+                    {localConfig.barLabelsFormat !== 'auto' && (
+                      <div className="form-row indent">
+                        <div className="form-group">
+                          <label className="form-label">Decimals</label>
+                          <NumberStepper value={localConfig.barLabelsDecimals} min={0} max={4}
+                            onChange={(v) => updateConfig('barLabelsDecimals', v)} />
+                        </div>
+                        {localConfig.barLabelsFormat === 'currency' && (
+                          <div className="form-group">
+                            <label className="form-label">Currency Symbol</label>
+                            <input type="text" value={localConfig.barLabelsCurrencySymbol} style={{ width: 60 }}
+                              onChange={(e) => updateConfig('barLabelsCurrencySymbol', e.target.value)} />
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <FontControls fontKey="bar1LabelFont" label="Bar 1 Label" />
                     <FontControls fontKey="bar2LabelFont" label="Bar 2 Label" />
                   </>
                 )}
 
+                <div className="divider" />
                 <div className="section-label">Line Labels</div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.lineLabelsShow}
@@ -1244,25 +1157,40 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         </select>
                       </div>
                       <div className="form-group">
-                        <label className="form-label">Font Size</label>
-                        <div className="slider-row">
-                          <input type="range" min="8" max="24" value={localConfig.lineLabelsFontSize}
-                            onChange={(e) => updateConfig('lineLabelsFontSize', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.lineLabelsFontSize}px</span>
-                        </div>
+                        <label className="form-label">Format</label>
+                        <select value={localConfig.lineLabelsFormat}
+                          onChange={(e) => updateConfig('lineLabelsFormat', e.target.value)}>
+                          <option value="auto">Auto</option>
+                          <option value="number">Number</option>
+                          <option value="currency">Currency</option>
+                          <option value="percent">Percent</option>
+                          <option value="compact">Compact (K/M/B)</option>
+                        </select>
                       </div>
                     </div>
-                    <div className="color-item compact indent">
-                      <label>Color</label>
-                      <input type="color" value={localConfig.lineLabelsColor}
-                        onChange={(e) => updateConfig('lineLabelsColor', e.target.value)} />
-                    </div>
+                    {localConfig.lineLabelsFormat !== 'auto' && (
+                      <div className="form-row indent">
+                        <div className="form-group">
+                          <label className="form-label">Decimals</label>
+                          <NumberStepper value={localConfig.lineLabelsDecimals} min={0} max={4}
+                            onChange={(v) => updateConfig('lineLabelsDecimals', v)} />
+                        </div>
+                        {localConfig.lineLabelsFormat === 'currency' && (
+                          <div className="form-group">
+                            <label className="form-label">Currency Symbol</label>
+                            <input type="text" value={localConfig.lineLabelsCurrencySymbol} style={{ width: 60 }}
+                              onChange={(e) => updateConfig('lineLabelsCurrencySymbol', e.target.value)} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <FontControls fontKey="lineLabelFont" label="Line Label" />
                   </>
                 )}
               </div>
             )}
 
-            {/* LEGEND TAB */}
+            {/* ═══ LEGEND ═══ */}
             {activeTab === 'legend' && (
               <div className="settings-tab">
                 <div className="tab-header">
@@ -1322,7 +1250,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               </div>
             )}
 
-            {/* TOOLTIP TAB */}
+            {/* ═══ TOOLTIP ═══ */}
             {activeTab === 'tooltip' && (
               <div className="settings-tab">
                 <div className="tab-header">
@@ -1356,25 +1284,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       </label>
                     </div>
 
-                    <div className="inline-row indent">
-                      <div className="color-item compact">
-                        <label>Background</label>
-                        <input type="color" value={localConfig.tooltipBgColor}
-                          onChange={(e) => updateConfig('tooltipBgColor', e.target.value)} />
-                      </div>
-                      <div className="color-item compact">
-                        <label>Text</label>
-                        <input type="color" value={localConfig.tooltipTextColor}
-                          onChange={(e) => updateConfig('tooltipTextColor', e.target.value)} />
-                      </div>
-                      <div className="form-group compact">
-                        <label className="form-label">Font Size</label>
-                        <div className="slider-row">
-                          <input type="range" min="8" max="18" value={localConfig.tooltipFontSize}
-                            onChange={(e) => updateConfig('tooltipFontSize', parseInt(e.target.value))} />
-                          <span className="slider-val">{localConfig.tooltipFontSize}px</span>
-                        </div>
-                      </div>
+                    <div className="color-item compact indent">
+                      <label>Background</label>
+                      <input type="color" value={localConfig.tooltipBgColor}
+                        onChange={(e) => updateConfig('tooltipBgColor', e.target.value)} />
                     </div>
                     <FontControls fontKey="tooltipFont" label="Tooltip" />
                   </>
@@ -1382,50 +1295,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               </div>
             )}
 
-            {/* ANIMATION TAB */}
-            {activeTab === 'animation' && (
-              <div className="settings-tab">
-                <div className="tab-header">
-                  <h3>Animation</h3>
-                  <p>Transition effects and timing</p>
-                </div>
-
-                <label className="check-row">
-                  <input type="checkbox" checked={localConfig.animationEnabled}
-                    onChange={(e) => updateConfig('animationEnabled', e.target.checked)} />
-                  <span>Enable Animations</span>
-                </label>
-
-                {localConfig.animationEnabled && (
-                  <>
-                    <div className="form-group indent">
-                      <label className="form-label">Duration</label>
-                      <div className="slider-row">
-                        <input type="range" min="100" max="2000" step="100"
-                          value={localConfig.animationDuration}
-                          onChange={(e) => updateConfig('animationDuration', parseInt(e.target.value))} />
-                        <span className="slider-val">{localConfig.animationDuration}ms</span>
-                      </div>
-                    </div>
-                    <div className="form-group indent">
-                      <label className="form-label">Easing</label>
-                      <select value={localConfig.animationEasing}
-                        onChange={(e) => updateConfig('animationEasing', e.target.value)}>
-                        <option value="easeLinear">Linear</option>
-                        <option value="easeCubicOut">Cubic Out</option>
-                        <option value="easeCubicInOut">Cubic In-Out</option>
-                        <option value="easeElastic">Elastic</option>
-                        <option value="easeBounce">Bounce</option>
-                        <option value="easeBack">Back</option>
-                        <option value="easeQuad">Quadratic</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* DEBUG TAB (hidden until Ctrl+Shift+D) */}
+            {/* ═══ DEBUG (hidden until Ctrl+Shift+D) ═══ */}
             {activeTab === 'debug' && showDebugTab && (
               <div className="settings-tab debug-tab">
                 <div className="tab-header">
@@ -1434,23 +1304,15 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 </div>
 
                 <div className="debug-tab-actions">
-                  <button
-                    className="btn-secondary btn-sm"
-                    onClick={() => {
-                      setShowDebugTab(false)
-                      setActiveTab('data')
-                    }}
-                  >
+                  <button className="btn-secondary btn-sm"
+                    onClick={() => { setShowDebugTab(false); setActiveTab('data') }}>
                     Hide
                   </button>
-                  <button
-                    className="btn-secondary btn-sm"
-                    onClick={() => onClearDebugLogs && onClearDebugLogs()}
-                  >
+                  <button className="btn-secondary btn-sm"
+                    onClick={() => onClearDebugLogs && onClearDebugLogs()}>
                     Clear
                   </button>
-                  <button
-                    className="btn-secondary btn-sm"
+                  <button className="btn-secondary btn-sm"
                     onClick={() => {
                       const text = debugLogs.map(l =>
                         `[${l.timestamp}] ${l.type.toUpperCase()}: ${l.message}`
@@ -1466,11 +1328,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         document.execCommand('copy')
                         document.body.removeChild(textarea)
                         console.info('Logs copied to clipboard')
-                      } catch {
-                        console.warn('Copy failed')
-                      }
-                    }}
-                  >
+                      } catch { console.warn('Copy failed') }
+                    }}>
                     Copy
                   </button>
                 </div>
