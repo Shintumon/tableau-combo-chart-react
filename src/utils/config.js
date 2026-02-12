@@ -294,6 +294,9 @@ export const Config = {
     // Chart Separators
     showHeaderBorder: true,
     showLegendBorder: false,
+    separatorStyle: 'solid',
+    separatorColor: '#e2e5ea',
+    separatorWidth: 1,
 
     // Theme
     theme: 'light'
