@@ -1435,24 +1435,136 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
 
                 {localConfig.tooltipShow && (
                   <>
-                    <div className="check-group indent">
-                      <label className="check-row">
-                        <input type="checkbox" checked={localConfig.tooltipShowDimension}
-                          onChange={(e) => updateConfig('tooltipShowDimension', e.target.checked)} />
-                        <span>Dimension</span>
-                      </label>
-                      <label className="check-row">
-                        <input type="checkbox" checked={localConfig.tooltipShowMeasureName}
-                          onChange={(e) => updateConfig('tooltipShowMeasureName', e.target.checked)} />
-                        <span>Measure Name</span>
-                      </label>
-                      <label className="check-row">
-                        <input type="checkbox" checked={localConfig.tooltipShowValue}
-                          onChange={(e) => updateConfig('tooltipShowValue', e.target.checked)} />
-                        <span>Value</span>
-                      </label>
-                    </div>
+                    <label className="check-row indent">
+                      <input type="checkbox" checked={localConfig.tooltipUseCustom}
+                        onChange={(e) => updateConfig('tooltipUseCustom', e.target.checked)} />
+                      <span>Use Custom Template</span>
+                    </label>
 
+                    {!localConfig.tooltipUseCustom ? (
+                      <div className="check-group indent">
+                        <label className="check-row">
+                          <input type="checkbox" checked={localConfig.tooltipShowDimension}
+                            onChange={(e) => updateConfig('tooltipShowDimension', e.target.checked)} />
+                          <span>Show Dimension</span>
+                        </label>
+                        <label className="check-row">
+                          <input type="checkbox" checked={localConfig.tooltipShowMeasureName}
+                            onChange={(e) => updateConfig('tooltipShowMeasureName', e.target.checked)} />
+                          <span>Show Measure Name</span>
+                        </label>
+                        <label className="check-row">
+                          <input type="checkbox" checked={localConfig.tooltipShowValue}
+                            onChange={(e) => updateConfig('tooltipShowValue', e.target.checked)} />
+                          <span>Show Value</span>
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="indent" style={{ marginTop: 12 }}>
+                        <div style={{ marginBottom: 8 }}>
+                          <label className="form-label" style={{ marginBottom: 6, display: 'block' }}>Insert Field:</label>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const field = '{dimension}'
+                                textarea.value = text.substring(0, start) + field + text.substring(end)
+                                textarea.selectionStart = textarea.selectionEnd = start + field.length
+                                textarea.focus()
+                                updateConfig('tooltipTemplate', textarea.value)
+                              }}>
+                              Dimension
+                            </button>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const field = '{bar1}'
+                                textarea.value = text.substring(0, start) + field + text.substring(end)
+                                textarea.selectionStart = textarea.selectionEnd = start + field.length
+                                textarea.focus()
+                                updateConfig('tooltipTemplate', textarea.value)
+                              }}>
+                              Bar 1
+                            </button>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const field = '{bar2}'
+                                textarea.value = text.substring(0, start) + field + text.substring(end)
+                                textarea.selectionStart = textarea.selectionEnd = start + field.length
+                                textarea.focus()
+                                updateConfig('tooltipTemplate', textarea.value)
+                              }}>
+                              Bar 2
+                            </button>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const field = '{line}'
+                                textarea.value = text.substring(0, start) + field + text.substring(end)
+                                textarea.selectionStart = textarea.selectionEnd = start + field.length
+                                textarea.focus()
+                                updateConfig('tooltipTemplate', textarea.value)
+                              }}>
+                              Line
+                            </button>
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Template</label>
+                          <textarea id="tooltip-template"
+                            value={localConfig.tooltipTemplate}
+                            onChange={(e) => updateConfig('tooltipTemplate', e.target.value)}
+                            placeholder="e.g., {dimension}&#10;{bar1}&#10;{bar2}&#10;{line}"
+                            rows={5}
+                            style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }} />
+                          <p className="help-text" style={{ marginTop: 6 }}>
+                            Available tokens: <code>{'{dimension}'}</code>, <code>{'{bar1}'}</code>, <code>{'{bar2}'}</code>, <code>{'{line}'}</code>,
+                            <code>{'{bar1_label}'}</code>, <code>{'{bar1_value}'}</code>, <code>{'{measure}'}</code>, <code>{'{value}'}</code>
+                          </p>
+                        </div>
+                        {localConfig.tooltipTemplate && (
+                          <div style={{ marginTop: 12, padding: 12, background: 'var(--color-surface)', borderRadius: 6, border: '1px solid var(--color-border)' }}>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 6 }}>PREVIEW:</div>
+                            <div style={{ fontSize: 12, lineHeight: 1.5 }}>
+                              {localConfig.tooltipTemplate.split('\n').map((line, i) => {
+                                const fieldNames = getFieldNames(localConfig)
+                                const preview = line
+                                  .replace(/\{dimension_label\}/g, getDisplayName('dimension', fieldNames, localConfig) || 'Category')
+                                  .replace(/\{dimension\}/g, 'Jan\' 25')
+                                  .replace(/\{bar1_label\}/g, getDisplayName('bar1', fieldNames, localConfig) || 'Bar 1')
+                                  .replace(/\{bar1_value\}/g, '1,234')
+                                  .replace(/\{bar1\}/g, `${getDisplayName('bar1', fieldNames, localConfig) || 'Bar 1'}: 1,234`)
+                                  .replace(/\{bar2_label\}/g, getDisplayName('bar2', fieldNames, localConfig) || 'Bar 2')
+                                  .replace(/\{bar2_value\}/g, '5,678')
+                                  .replace(/\{bar2\}/g, `${getDisplayName('bar2', fieldNames, localConfig) || 'Bar 2'}: 5,678`)
+                                  .replace(/\{line_label\}/g, getDisplayName('line', fieldNames, localConfig) || 'Line')
+                                  .replace(/\{line_value\}/g, '42.5%')
+                                  .replace(/\{line\}/g, `${getDisplayName('line', fieldNames, localConfig) || 'Line'}: 42.5%`)
+                                  .replace(/\{measure\}/g, 'Bar 1')
+                                  .replace(/\{value\}/g, '1,234')
+                                return preview.trim() ? <div key={i}>{preview}</div> : null
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="divider" />
+                    <div className="section-label">Style</div>
                     <div className="color-item compact indent">
                       <label>Background</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

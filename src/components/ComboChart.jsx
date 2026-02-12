@@ -840,14 +840,57 @@ function ComboChart({ data, columns, config }) {
       const displayName = getDisplayName(type, fieldNames, config)
 
       let content = ''
-      if (config.tooltipShowDimension) {
-        content += `<strong>${category}</strong><br/>`
+
+      // Custom template mode
+      if (config.tooltipUseCustom && config.tooltipTemplate) {
+        // Get all display names
+        const dimensionLabel = getDisplayName('dimension', fieldNames, config)
+        const bar1Label = getDisplayName('bar1', fieldNames, config)
+        const bar2Label = getDisplayName('bar2', fieldNames, config)
+        const lineLabel = getDisplayName('line', fieldNames, config)
+
+        // Find the data point to get all values
+        const dataPoint = data.find(d => d.category === category)
+        const bar1Formatted = dataPoint?.bar1 != null ? d3.format(',.2f')(dataPoint.bar1) : ''
+        const bar2Formatted = dataPoint?.bar2 != null ? d3.format(',.2f')(dataPoint.bar2) : ''
+        const lineFormatted = dataPoint?.line != null ? d3.format(',.2f')(dataPoint.line) : ''
+        const valueFormatted = d3.format(',.2f')(value)
+
+        // Parse template line by line
+        const lines = config.tooltipTemplate.split('\n')
+        lines.forEach(line => {
+          const rendered = line
+            .replace(/\{dimension_label\}/g, dimensionLabel)
+            .replace(/\{dimension\}/g, category)
+            .replace(/\{bar1_label\}/g, bar1Label)
+            .replace(/\{bar1_value\}/g, bar1Formatted)
+            .replace(/\{bar1\}/g, `${bar1Label}: ${bar1Formatted}`)
+            .replace(/\{bar2_label\}/g, bar2Label)
+            .replace(/\{bar2_value\}/g, bar2Formatted)
+            .replace(/\{bar2\}/g, `${bar2Label}: ${bar2Formatted}`)
+            .replace(/\{line_label\}/g, lineLabel)
+            .replace(/\{line_value\}/g, lineFormatted)
+            .replace(/\{line\}/g, `${lineLabel}: ${lineFormatted}`)
+            .replace(/\{measure\}/g, displayName)
+            .replace(/\{value\}/g, valueFormatted)
+
+          if (rendered.trim()) {
+            content += `<div class="tooltip-row">${rendered}</div>`
+          }
+        })
       }
-      if (config.tooltipShowMeasureName) {
-        content += `${displayName}: `
-      }
-      if (config.tooltipShowValue) {
-        content += `${d3.format(',.2f')(value)}`
+      // Default mode
+      else {
+        if (config.tooltipShowDimension) {
+          content += `<div class="tooltip-title"><strong>${category}</strong></div>`
+        }
+        if (config.tooltipShowMeasureName && config.tooltipShowValue) {
+          content += `<div class="tooltip-row"><span class="tooltip-label">${displayName}:</span> <span class="tooltip-value">${d3.format(',.2f')(value)}</span></div>`
+        } else if (config.tooltipShowMeasureName) {
+          content += `<div class="tooltip-row">${displayName}</div>`
+        } else if (config.tooltipShowValue) {
+          content += `<div class="tooltip-row">${d3.format(',.2f')(value)}</div>`
+        }
       }
 
       tooltip

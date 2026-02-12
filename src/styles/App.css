@@ -1005,3 +1005,23 @@ select {
 .debug-tab-content::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
 }
+
+/* ===== TOOLTIP STYLING ===== */
+.tooltip-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.tooltip-row {
+  line-height: 1.5;
+  margin: 2px 0;
+}
+
+.tooltip-label {
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.tooltip-value {
+  font-weight: 600;
+}
