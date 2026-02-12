@@ -488,26 +488,6 @@ body {
   line-height: 1.4;
 }
 
-/* Font Preview */
-.font-preview {
-  background: var(--color-bg-secondary, #f8f9fa);
-  border: 1px solid var(--color-border-light, #e0e0e0);
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin: 4px 0;
-}
-
-.font-preview .preview-title {
-  font-size: 16px;
-  color: var(--color-text, #333);
-  margin-bottom: 4px;
-}
-
-.font-preview .preview-label {
-  font-size: 12px;
-  color: var(--color-text-muted, #666);
-}
-
 /* ===== FORM CONTROLS ===== */
 
 /* Form Group */
@@ -572,54 +552,6 @@ select {
   background-position: right 8px center;
   padding-right: 28px;
   cursor: pointer;
-}
-
-/* Slider Row */
-.slider-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.slider-row input[type="range"] {
-  flex: 1;
-  height: 4px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: var(--color-border);
-  border-radius: 2px;
-  outline: none;
-}
-
-.slider-row input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.slider-row input[type="range"]::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.slider-val {
-  min-width: 48px;
-  text-align: right;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-primary);
-  font-family: var(--font-mono);
 }
 
 /* Number Stepper */

@@ -291,7 +291,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               <div className="settings-tab">
                 <div className="tab-header">
                   <h3>General</h3>
-                  <p>Theme, typography, animation and dashboard options</p>
+                  <p>Theme, font, animation and dashboard options</p>
                 </div>
 
                 <div className="form-row">
@@ -310,11 +310,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                   </div>
                 </div>
 
-                <div className="divider" />
-                <div className="section-label">Typography</div>
-
                 <div className="form-group">
-                  <label className="form-label">Font Family</label>
+                  <label className="form-label">Global Font</label>
                   <select value={localConfig.fontFamily}
                     onChange={(e) => updateConfig('fontFamily', e.target.value)}
                     style={{ fontFamily: localConfig.fontFamily }}>
@@ -324,34 +321,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         : <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
                     ))}
                   </select>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Title Weight</label>
-                    <select value={String(localConfig.titleWeight)}
-                      onChange={(e) => updateConfig('titleWeight', e.target.value)}>
-                      <option value="400">Normal (400)</option>
-                      <option value="500">Medium (500)</option>
-                      <option value="600">Semi-Bold (600)</option>
-                      <option value="700">Bold (700)</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Label Weight</label>
-                    <select value={String(localConfig.labelWeight)}
-                      onChange={(e) => updateConfig('labelWeight', e.target.value)}>
-                      <option value="300">Light (300)</option>
-                      <option value="400">Normal (400)</option>
-                      <option value="500">Medium (500)</option>
-                      <option value="600">Semi-Bold (600)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="font-preview" style={{ fontFamily: localConfig.fontFamily }}>
-                  <div className="preview-title" style={{ fontWeight: localConfig.titleWeight }}>Preview Title</div>
-                  <div className="preview-label" style={{ fontWeight: localConfig.labelWeight }}>Axis labels and legend text</div>
+                  <p className="help-text">Default font for all chart elements. Override per element in their respective tabs.</p>
                 </div>
 
                 <div className="divider" />
@@ -400,20 +370,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     onChange={(e) => updateConfig('showRefreshButton', e.target.checked)} />
                   <span>Show Refresh Button</span>
                 </label>
-
-                <div className="divider" />
-                <div className="section-label">Chart Separators</div>
-
-                <label className="check-row">
-                  <input type="checkbox" checked={localConfig.showHeaderBorder}
-                    onChange={(e) => updateConfig('showHeaderBorder', e.target.checked)} />
-                  <span>Show Header Border</span>
-                </label>
-                <label className="check-row">
-                  <input type="checkbox" checked={localConfig.showLegendBorder}
-                    onChange={(e) => updateConfig('showLegendBorder', e.target.checked)} />
-                  <span>Show Legend Border</span>
-                </label>
               </div>
             )}
 
@@ -422,7 +378,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               <div className="settings-tab">
                 <div className="tab-header">
                   <h3>Colors</h3>
-                  <p>Color palette, individual colors and opacity</p>
+                  <p>Color palette and element colors</p>
                 </div>
 
                 <div className="form-group">
@@ -433,6 +389,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       <option key={id} value={id}>{palette.name}</option>
                     ))}
                   </select>
+                  <p className="help-text">Selecting a palette applies its colors to bars, line and points.</p>
                 </div>
 
                 <div className="palette-preview">
@@ -442,43 +399,47 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 </div>
 
                 <div className="divider" />
-
-                <div className="color-grid">
-                  <div className="color-item">
-                    <label>Bar 1</label>
+                <div className="section-label">Bar 1</div>
+                <div className="inline-row indent">
+                  <div className="color-item compact">
+                    <label>Fill</label>
                     <input type="color" value={localConfig.bar1Color}
                       onChange={(e) => updateConfig('bar1Color', e.target.value)} />
                   </div>
-                  <div className="color-item">
-                    <label>Bar 2</label>
-                    <input type="color" value={localConfig.bar2Color}
-                      onChange={(e) => updateConfig('bar2Color', e.target.value)} />
-                  </div>
-                  <div className="color-item">
-                    <label>Line</label>
-                    <input type="color" value={localConfig.lineColor}
-                      onChange={(e) => updateConfig('lineColor', e.target.value)} />
+                  <div className="form-group compact">
+                    <label className="form-label">Opacity</label>
+                    <NumberStepper value={Math.round(localConfig.bar1Opacity * 100)} min={0} max={100} step={10} suffix="%"
+                      onChange={(v) => updateConfig('bar1Opacity', v / 100)} />
                   </div>
                 </div>
 
-                <div className="divider" />
-                <div className="section-label">Opacity</div>
-
-                {[
-                  ['bar1Opacity', 'Bar 1'],
-                  ['bar2Opacity', 'Bar 2'],
-                  ['lineOpacity', 'Line']
-                ].map(([key, label]) => (
-                  <div className="form-row" key={key}>
-                    <div className="form-group" style={{ flex: 1 }}>
-                      <label className="form-label">{label}</label>
-                    </div>
-                    <div className="form-group" style={{ flex: 0 }}>
-                      <NumberStepper value={Math.round(localConfig[key] * 100)} min={0} max={100} step={10} suffix="%"
-                        onChange={(v) => updateConfig(key, v / 100)} />
-                    </div>
+                <div className="section-label">Bar 2</div>
+                <div className="inline-row indent">
+                  <div className="color-item compact">
+                    <label>Fill</label>
+                    <input type="color" value={localConfig.bar2Color}
+                      onChange={(e) => updateConfig('bar2Color', e.target.value)} />
                   </div>
-                ))}
+                  <div className="form-group compact">
+                    <label className="form-label">Opacity</label>
+                    <NumberStepper value={Math.round(localConfig.bar2Opacity * 100)} min={0} max={100} step={10} suffix="%"
+                      onChange={(v) => updateConfig('bar2Opacity', v / 100)} />
+                  </div>
+                </div>
+
+                <div className="section-label">Line</div>
+                <div className="inline-row indent">
+                  <div className="color-item compact">
+                    <label>Color</label>
+                    <input type="color" value={localConfig.lineColor}
+                      onChange={(e) => updateConfig('lineColor', e.target.value)} />
+                  </div>
+                  <div className="form-group compact">
+                    <label className="form-label">Opacity</label>
+                    <NumberStepper value={Math.round(localConfig.lineOpacity * 100)} min={0} max={100} step={10} suffix="%"
+                      onChange={(v) => updateConfig('lineOpacity', v / 100)} />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1025,7 +986,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               <div className="settings-tab">
                 <div className="tab-header">
                   <h3>Title & Grid</h3>
-                  <p>Chart title and grid lines</p>
+                  <p>Chart title, grid lines and visual separators</p>
                 </div>
 
                 <div className="section-label">Title</div>
@@ -1040,6 +1001,18 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       <label className="form-label">Text</label>
                       <input type="text" value={localConfig.titleText}
                         onChange={(e) => updateConfig('titleText', e.target.value)} />
+                    </div>
+                    <div className="form-row indent">
+                      <div className="form-group">
+                        <label className="form-label">Padding</label>
+                        <NumberStepper value={localConfig.titlePadding} min={0} max={40} suffix="px"
+                          onChange={(v) => updateConfig('titlePadding', v)} />
+                      </div>
+                      <div className="color-item compact">
+                        <label>Background</label>
+                        <input type="color" value={localConfig.titleBgColor === 'transparent' ? '#ffffff' : localConfig.titleBgColor}
+                          onChange={(e) => updateConfig('titleBgColor', e.target.value)} />
+                      </div>
                     </div>
                     <FontControls fontKey="titleFont" label="Title" sizeMin={10} sizeMax={36} />
                   </>
@@ -1073,6 +1046,20 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     </div>
                   </div>
                 )}
+
+                <div className="divider" />
+                <div className="section-label">Separators</div>
+                <p className="help-text">Border lines between chart sections.</p>
+                <label className="check-row">
+                  <input type="checkbox" checked={localConfig.showHeaderBorder}
+                    onChange={(e) => updateConfig('showHeaderBorder', e.target.checked)} />
+                  <span>Show Header Border</span>
+                </label>
+                <label className="check-row">
+                  <input type="checkbox" checked={localConfig.showLegendBorder}
+                    onChange={(e) => updateConfig('showLegendBorder', e.target.checked)} />
+                  <span>Show Legend Border</span>
+                </label>
               </div>
             )}
 
@@ -1130,6 +1117,18 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         )}
                       </div>
                     )}
+                    <div className="form-row indent">
+                      <div className="form-group">
+                        <label className="form-label">Offset X</label>
+                        <NumberStepper value={localConfig.barLabelsOffsetX} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('barLabelsOffsetX', v)} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Offset Y</label>
+                        <NumberStepper value={localConfig.barLabelsOffsetY} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('barLabelsOffsetY', v)} />
+                      </div>
+                    </div>
                     <FontControls fontKey="bar1LabelFont" label="Bar 1 Label" />
                     <FontControls fontKey="bar2LabelFont" label="Bar 2 Label" />
                   </>
@@ -1184,6 +1183,18 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         )}
                       </div>
                     )}
+                    <div className="form-row indent">
+                      <div className="form-group">
+                        <label className="form-label">Offset X</label>
+                        <NumberStepper value={localConfig.lineLabelsOffsetX} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('lineLabelsOffsetX', v)} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Offset Y</label>
+                        <NumberStepper value={localConfig.lineLabelsOffsetY} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('lineLabelsOffsetY', v)} />
+                      </div>
+                    </div>
                     <FontControls fontKey="lineLabelFont" label="Line Label" />
                   </>
                 )}
@@ -1195,7 +1206,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               <div className="settings-tab">
                 <div className="tab-header">
                   <h3>Legend</h3>
-                  <p>Legend position and custom labels</p>
+                  <p>Legend position, spacing and custom labels</p>
                 </div>
 
                 <label className="check-row">
@@ -1228,6 +1239,27 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       </div>
                     </div>
 
+                    <div className="divider" />
+                    <div className="section-label">Spacing & Style</div>
+                    <div className="form-row indent">
+                      <div className="form-group">
+                        <label className="form-label">Padding</label>
+                        <NumberStepper value={localConfig.legendPadding} min={0} max={40} suffix="px"
+                          onChange={(v) => updateConfig('legendPadding', v)} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Item Gap</label>
+                        <NumberStepper value={localConfig.legendGap} min={4} max={60} suffix="px"
+                          onChange={(v) => updateConfig('legendGap', v)} />
+                      </div>
+                    </div>
+                    <div className="color-item compact indent">
+                      <label>Background</label>
+                      <input type="color" value={localConfig.legendBgColor === 'transparent' ? '#ffffff' : localConfig.legendBgColor}
+                        onChange={(e) => updateConfig('legendBgColor', e.target.value)} />
+                    </div>
+
+                    <div className="divider" />
                     <div className="section-label">Custom Labels</div>
                     <div className="form-group indent">
                       <label className="form-label">Bar 1</label>
