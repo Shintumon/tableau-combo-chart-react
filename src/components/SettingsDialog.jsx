@@ -80,7 +80,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     }))
   }
 
-  // Reusable number stepper component
+  // Reusable number stepper component — uses inline styles to avoid CSS specificity conflicts
   const NumberStepper = ({ value, onChange, min, max, step = 1, suffix = '' }) => {
     const handleInput = (e) => {
       const raw = e.target.value
@@ -91,13 +91,38 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
         onChange(step < 1 ? parseFloat(num.toFixed(2)) : Math.round(num))
       }
     }
+    const containerStyle = {
+      display: 'inline-flex', alignItems: 'stretch', border: '1px solid var(--color-border, #e2e5ea)',
+      borderRadius: '6px', overflow: 'hidden', height: '30px', flexShrink: 0
+    }
+    const btnStyle = {
+      width: '28px', minWidth: '28px', height: '100%', border: 'none', borderRadius: 0,
+      background: 'var(--color-surface, #f8f9fb)', color: 'var(--color-text-secondary, #6b7280)',
+      fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', padding: 0, margin: 0, lineHeight: 1
+    }
+    const inputStyle = {
+      width: '44px', minWidth: '44px', height: '100%', border: 'none',
+      borderLeft: '1px solid var(--color-border, #e2e5ea)', borderRight: '1px solid var(--color-border, #e2e5ea)',
+      borderRadius: 0, textAlign: 'center', fontSize: '12px', fontWeight: 600,
+      fontFamily: 'var(--font-mono, monospace)', color: 'var(--color-text, #1a1d23)',
+      background: 'var(--color-bg, #fff)', padding: 0, margin: 0, boxShadow: 'none',
+      MozAppearance: 'textfield', WebkitAppearance: 'none'
+    }
+    const suffixStyle = {
+      fontSize: '11px', color: 'var(--color-text-muted, #9ca3af)', padding: '0 6px 0 0',
+      margin: 0, background: 'var(--color-bg, #fff)', lineHeight: '30px',
+      borderRight: '1px solid var(--color-border, #e2e5ea)', whiteSpace: 'nowrap'
+    }
     return (
-      <div className="number-stepper">
-        <button type="button" onClick={() => onChange(Math.max(min, parseFloat(((value || 0) - step).toFixed(2))))} disabled={value <= min}>&minus;</button>
-        <input type="number" value={value} min={min} max={max} step={step}
+      <div style={containerStyle}>
+        <button type="button" style={{ ...btnStyle, opacity: value <= min ? 0.35 : 1 }}
+          onClick={() => onChange(Math.max(min, parseFloat(((value || 0) - step).toFixed(2))))} disabled={value <= min}>&minus;</button>
+        <input type="number" style={inputStyle} value={value} min={min} max={max} step={step}
           onChange={handleInput} onBlur={handleInput} />
-        {suffix && <span className="stepper-suffix">{suffix}</span>}
-        <button type="button" onClick={() => onChange(Math.min(max, parseFloat(((value || 0) + step).toFixed(2))))} disabled={value >= max}>+</button>
+        {suffix && <span style={suffixStyle}>{suffix}</span>}
+        <button type="button" style={{ ...btnStyle, opacity: value >= max ? 0.35 : 1 }}
+          onClick={() => onChange(Math.min(max, parseFloat(((value || 0) + step).toFixed(2))))} disabled={value >= max}>+</button>
       </div>
     )
   }
