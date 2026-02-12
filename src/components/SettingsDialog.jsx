@@ -777,10 +777,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         onChange={(e) => updateConfig('xAxisShowLabels', e.target.checked)} />
                       <span>Show Labels</span>
                     </label>
+                    <FormatControls prefix="xAxis" localConfig={localConfig}
+                      updateConfig={updateConfig} NumberStepper={NumberStepper} showDateFormats />
+                    <p className="help-text indent" style={{ marginTop: -4, marginBottom: 8 }}>
+                      Format applies to X-axis labels
+                    </p>
                     {localConfig.xAxisShowLabels && (
                       <>
-                        <FormatControls prefix="xAxis" localConfig={localConfig}
-                          updateConfig={updateConfig} NumberStepper={NumberStepper} showDateFormats />
                         <FontControls fontKey="xAxisLabelFont" label="X Axis Labels" />
                         <div className="form-group indent">
                           <label className="form-label">Label Rotation</label>
@@ -884,10 +887,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         onChange={(e) => updateConfig('yAxisLeftShowLabels', e.target.checked)} />
                       <span>Show Labels</span>
                     </label>
+                    <FormatControls prefix="yAxisLeft" localConfig={localConfig}
+                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
+                    <p className="help-text indent" style={{ marginTop: -4, marginBottom: 8 }}>
+                      Format applies to Y-axis (left) labels
+                    </p>
                     {localConfig.yAxisLeftShowLabels && (
                       <>
-                        <FormatControls prefix="yAxisLeft" localConfig={localConfig}
-                          updateConfig={updateConfig} NumberStepper={NumberStepper} />
                         <FontControls fontKey="yAxisLeftLabelFont" label="Y Left Labels" />
                         <div className="form-row indent">
                           <div className="form-group">
@@ -976,10 +982,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         onChange={(e) => updateConfig('yAxisRightShowLabels', e.target.checked)} />
                       <span>Show Labels</span>
                     </label>
+                    <FormatControls prefix="yAxisRight" localConfig={localConfig}
+                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
+                    <p className="help-text indent" style={{ marginTop: -4, marginBottom: 8 }}>
+                      Format applies to Y-axis (right) labels
+                    </p>
                     {localConfig.yAxisRightShowLabels && (
                       <>
-                        <FormatControls prefix="yAxisRight" localConfig={localConfig}
-                          updateConfig={updateConfig} NumberStepper={NumberStepper} />
                         <FontControls fontKey="yAxisRightLabelFont" label="Y Right Labels" />
                         <div className="form-row indent">
                           <div className="form-group">
