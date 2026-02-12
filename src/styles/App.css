@@ -680,6 +680,22 @@ select {
   border-color: var(--color-primary);
 }
 
+/* Font Controls */
+.font-controls-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--color-border-light);
+  margin-top: 4px;
+}
+
+.font-controls-group > .form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
 /* Font Controls — compact props row */
 .font-props-row {
   display: flex;

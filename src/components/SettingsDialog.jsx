@@ -136,7 +136,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     const font = localConfig[fontKey] || {}
     return (
       <div className="font-controls-group">
-        <div className="section-label">{label} Font</div>
+        <label className="form-label">{label} Font</label>
         <div className="form-group indent">
           <select value={font.family || ''} onChange={(e) => updateFont(fontKey, 'family', e.target.value)}
             style={{ fontFamily: font.family || localConfig.fontFamily }}>
@@ -690,7 +690,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('xAxisTitle', e.target.value)} />
                       </div>
                     )}
-                    <FontControls fontKey="xAxisFont" label="X Axis" />
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.xAxisShowLabels}
@@ -746,6 +745,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('xAxisLineColor', e.target.value)} />
                       </div>
                     </div>
+                    <FontControls fontKey="xAxisFont" label="X Axis" />
                   </>
                 )}
 
@@ -769,7 +769,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisLeftTitle', e.target.value)} />
                       </div>
                     )}
-                    <FontControls fontKey="yAxisLeftFont" label="Y Left Axis" />
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.yAxisLeftShowLabels}
@@ -843,6 +842,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisLeftLineColor', e.target.value)} />
                       </div>
                     </div>
+                    <FontControls fontKey="yAxisLeftFont" label="Y Left Axis" />
                   </>
                 )}
 
@@ -866,7 +866,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisRightTitle', e.target.value)} />
                       </div>
                     )}
-                    <FontControls fontKey="yAxisRightFont" label="Y Right Axis" />
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.yAxisRightShowLabels}
@@ -940,6 +939,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisRightLineColor', e.target.value)} />
                       </div>
                     </div>
+                    <FontControls fontKey="yAxisRightFont" label="Y Right Axis" />
                   </>
                 )}
               </div>
