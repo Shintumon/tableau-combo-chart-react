@@ -181,7 +181,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
   const tabs = [
     { id: 'data', label: 'Data' },
     { id: 'general', label: 'General' },
-    { id: 'colors', label: 'Colors' },
     { id: 'bars', label: 'Bars' },
     { id: 'line', label: 'Line' },
     { id: 'axes', label: 'Axes' },
@@ -350,6 +349,25 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 </div>
 
                 <div className="divider" />
+                <div className="section-label">Color Palette</div>
+
+                <div className="form-group">
+                  <select value={localConfig.colorPalette}
+                    onChange={(e) => handleApplyPalette(e.target.value)}>
+                    {Object.entries(Config.colorPalettes).map(([id, palette]) => (
+                      <option key={id} value={id}>{palette.name}</option>
+                    ))}
+                  </select>
+                  <p className="help-text">Applies colors to bars, line and points. Fine-tune in their respective tabs.</p>
+                </div>
+
+                <div className="palette-preview">
+                  {Config.colorPalettes[localConfig.colorPalette].colors.map((color, i) => (
+                    <div key={i} className="palette-swatch" style={{ backgroundColor: color }} title={color} />
+                  ))}
+                </div>
+
+                <div className="divider" />
                 <div className="section-label">Animation</div>
 
                 <label className="check-row">
@@ -398,76 +416,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               </div>
             )}
 
-            {/* ═══ COLORS ═══ */}
-            {activeTab === 'colors' && (
-              <div className="settings-tab">
-                <div className="tab-header">
-                  <h3>Colors</h3>
-                  <p>Color palette and element colors</p>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Color Palette</label>
-                  <select value={localConfig.colorPalette}
-                    onChange={(e) => handleApplyPalette(e.target.value)}>
-                    {Object.entries(Config.colorPalettes).map(([id, palette]) => (
-                      <option key={id} value={id}>{palette.name}</option>
-                    ))}
-                  </select>
-                  <p className="help-text">Selecting a palette applies its colors to bars, line and points.</p>
-                </div>
-
-                <div className="palette-preview">
-                  {Config.colorPalettes[localConfig.colorPalette].colors.map((color, i) => (
-                    <div key={i} className="palette-swatch" style={{ backgroundColor: color }} title={color} />
-                  ))}
-                </div>
-
-                <div className="divider" />
-                <div className="section-label">Bar 1</div>
-                <div className="inline-row indent">
-                  <div className="color-item compact">
-                    <label>Fill</label>
-                    <input type="color" value={localConfig.bar1Color}
-                      onChange={(e) => updateConfig('bar1Color', e.target.value)} />
-                  </div>
-                  <div className="form-group compact">
-                    <label className="form-label">Opacity</label>
-                    <NumberStepper value={Math.round(localConfig.bar1Opacity * 100)} min={0} max={100} step={10} suffix="%"
-                      onChange={(v) => updateConfig('bar1Opacity', v / 100)} />
-                  </div>
-                </div>
-
-                <div className="section-label">Bar 2</div>
-                <div className="inline-row indent">
-                  <div className="color-item compact">
-                    <label>Fill</label>
-                    <input type="color" value={localConfig.bar2Color}
-                      onChange={(e) => updateConfig('bar2Color', e.target.value)} />
-                  </div>
-                  <div className="form-group compact">
-                    <label className="form-label">Opacity</label>
-                    <NumberStepper value={Math.round(localConfig.bar2Opacity * 100)} min={0} max={100} step={10} suffix="%"
-                      onChange={(v) => updateConfig('bar2Opacity', v / 100)} />
-                  </div>
-                </div>
-
-                <div className="section-label">Line</div>
-                <div className="inline-row indent">
-                  <div className="color-item compact">
-                    <label>Color</label>
-                    <input type="color" value={localConfig.lineColor}
-                      onChange={(e) => updateConfig('lineColor', e.target.value)} />
-                  </div>
-                  <div className="form-group compact">
-                    <label className="form-label">Opacity</label>
-                    <NumberStepper value={Math.round(localConfig.lineOpacity * 100)} min={0} max={100} step={10} suffix="%"
-                      onChange={(v) => updateConfig('lineOpacity', v / 100)} />
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* ═══ BARS ═══ */}
             {activeTab === 'bars' && (
               <div className="settings-tab">
@@ -511,6 +459,18 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
 
                 <div className="divider" />
                 <div className="section-label">Bar 1</div>
+                <div className="inline-row indent">
+                  <div className="color-item compact">
+                    <label>Fill</label>
+                    <input type="color" value={localConfig.bar1Color}
+                      onChange={(e) => updateConfig('bar1Color', e.target.value)} />
+                  </div>
+                  <div className="form-group compact">
+                    <label className="form-label">Opacity</label>
+                    <NumberStepper value={Math.round(localConfig.bar1Opacity * 100)} min={0} max={100} step={10} suffix="%"
+                      onChange={(v) => updateConfig('bar1Opacity', v / 100)} />
+                  </div>
+                </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.bar1ShowBorder}
                     onChange={(e) => updateConfig('bar1ShowBorder', e.target.checked)} />
@@ -536,7 +496,20 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     onChange={(v) => updateConfig('bar1CornerRadius', v)} />
                 </div>
 
+                <div className="divider" />
                 <div className="section-label">Bar 2</div>
+                <div className="inline-row indent">
+                  <div className="color-item compact">
+                    <label>Fill</label>
+                    <input type="color" value={localConfig.bar2Color}
+                      onChange={(e) => updateConfig('bar2Color', e.target.value)} />
+                  </div>
+                  <div className="form-group compact">
+                    <label className="form-label">Opacity</label>
+                    <NumberStepper value={Math.round(localConfig.bar2Opacity * 100)} min={0} max={100} step={10} suffix="%"
+                      onChange={(v) => updateConfig('bar2Opacity', v / 100)} />
+                  </div>
+                </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.bar2ShowBorder}
                     onChange={(e) => updateConfig('bar2ShowBorder', e.target.checked)} />
@@ -573,6 +546,19 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 </div>
 
                 <div className="section-label">Line</div>
+
+                <div className="inline-row indent">
+                  <div className="color-item compact">
+                    <label>Color</label>
+                    <input type="color" value={localConfig.lineColor}
+                      onChange={(e) => updateConfig('lineColor', e.target.value)} />
+                  </div>
+                  <div className="form-group compact">
+                    <label className="form-label">Opacity</label>
+                    <NumberStepper value={Math.round(localConfig.lineOpacity * 100)} min={0} max={100} step={10} suffix="%"
+                      onChange={(v) => updateConfig('lineOpacity', v / 100)} />
+                  </div>
+                </div>
 
                 <div className="form-group">
                   <label className="form-label">Width</label>
