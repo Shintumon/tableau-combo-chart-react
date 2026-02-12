@@ -1025,17 +1025,12 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     onChange={(e) => updateConfig('showHeaderBorder', e.target.checked)} />
                   <span>Show Header Border</span>
                 </label>
-                <label className="check-row">
-                  <input type="checkbox" checked={localConfig.showLegendBorder}
-                    onChange={(e) => updateConfig('showLegendBorder', e.target.checked)} />
-                  <span>Show Legend Border</span>
-                </label>
-                {(localConfig.showHeaderBorder || localConfig.showLegendBorder) && (
+                {localConfig.showHeaderBorder && (
                   <div className="inline-row indent">
                     <div className="form-group compact">
                       <label className="form-label">Style</label>
-                      <select value={localConfig.separatorStyle || 'solid'}
-                        onChange={(e) => updateConfig('separatorStyle', e.target.value)}>
+                      <select value={localConfig.headerBorderStyle || 'solid'}
+                        onChange={(e) => updateConfig('headerBorderStyle', e.target.value)}>
                         <option value="solid">Solid</option>
                         <option value="dashed">Dashed</option>
                         <option value="dotted">Dotted</option>
@@ -1043,13 +1038,41 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     </div>
                     <div className="form-group compact">
                       <label className="form-label">Width</label>
-                      <NumberStepper value={localConfig.separatorWidth || 1} min={1} max={5} suffix="px"
-                        onChange={(v) => updateConfig('separatorWidth', v)} />
+                      <NumberStepper value={localConfig.headerBorderWidth || 1} min={1} max={5} suffix="px"
+                        onChange={(v) => updateConfig('headerBorderWidth', v)} />
                     </div>
                     <div className="color-item compact">
                       <label>Color</label>
-                      <input type="color" value={localConfig.separatorColor || '#e2e5ea'}
-                        onChange={(e) => updateConfig('separatorColor', e.target.value)} />
+                      <input type="color" value={localConfig.headerBorderColor || '#e2e5ea'}
+                        onChange={(e) => updateConfig('headerBorderColor', e.target.value)} />
+                    </div>
+                  </div>
+                )}
+                <label className="check-row">
+                  <input type="checkbox" checked={localConfig.showLegendBorder}
+                    onChange={(e) => updateConfig('showLegendBorder', e.target.checked)} />
+                  <span>Show Legend Border</span>
+                </label>
+                {localConfig.showLegendBorder && (
+                  <div className="inline-row indent">
+                    <div className="form-group compact">
+                      <label className="form-label">Style</label>
+                      <select value={localConfig.legendBorderStyle || 'solid'}
+                        onChange={(e) => updateConfig('legendBorderStyle', e.target.value)}>
+                        <option value="solid">Solid</option>
+                        <option value="dashed">Dashed</option>
+                        <option value="dotted">Dotted</option>
+                      </select>
+                    </div>
+                    <div className="form-group compact">
+                      <label className="form-label">Width</label>
+                      <NumberStepper value={localConfig.legendBorderWidth || 1} min={1} max={5} suffix="px"
+                        onChange={(v) => updateConfig('legendBorderWidth', v)} />
+                    </div>
+                    <div className="color-item compact">
+                      <label>Color</label>
+                      <input type="color" value={localConfig.legendBorderColor || '#e2e5ea'}
+                        onChange={(e) => updateConfig('legendBorderColor', e.target.value)} />
                     </div>
                   </div>
                 )}

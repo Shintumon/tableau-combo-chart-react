@@ -928,7 +928,7 @@ function ComboChart({ data, columns, config }) {
   const fontFamily = config.fontFamily || '"Tableau Book", Arial, sans-serif'
   const themeColors = Config.themes[config.theme] || Config.themes.light
   const legendBorder = config.showLegendBorder
-    ? `${config.separatorWidth || 1}px ${config.separatorStyle || 'solid'} ${config.separatorColor || themeColors.gridColor || '#e0e0e0'}`
+    ? `${config.legendBorderWidth || 1}px ${config.legendBorderStyle || 'solid'} ${config.legendBorderColor || themeColors.gridColor || '#e0e0e0'}`
     : 'none'
   const lgFont = config.legendFont || {}
   const legendStyle = {

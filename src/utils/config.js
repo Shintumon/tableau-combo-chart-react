@@ -293,10 +293,13 @@ export const Config = {
 
     // Chart Separators
     showHeaderBorder: true,
+    headerBorderStyle: 'solid',
+    headerBorderColor: '#e2e5ea',
+    headerBorderWidth: 1,
     showLegendBorder: false,
-    separatorStyle: 'solid',
-    separatorColor: '#e2e5ea',
-    separatorWidth: 1,
+    legendBorderStyle: 'solid',
+    legendBorderColor: '#e2e5ea',
+    legendBorderWidth: 1,
 
     // Theme
     theme: 'light'

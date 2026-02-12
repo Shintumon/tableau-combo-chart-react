@@ -217,7 +217,7 @@ function App() {
       {(config.titleShow !== false || config.showRefreshButton !== false || config.showSettingsCog !== false) && (
         <header className="app-header" style={{
           borderBottom: config.showHeaderBorder !== false
-            ? `${config.separatorWidth || 1}px ${config.separatorStyle || 'solid'} ${config.separatorColor || 'var(--color-border)'}`
+            ? `${config.headerBorderWidth || 1}px ${config.headerBorderStyle || 'solid'} ${config.headerBorderColor || 'var(--color-border)'}`
             : 'none',
           padding: config.titlePadding != null ? `${config.titlePadding}px 16px` : undefined,
           background: config.titleBgColor && config.titleBgColor !== 'transparent' ? config.titleBgColor : undefined
