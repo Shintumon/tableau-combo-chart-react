@@ -616,12 +616,16 @@ function ComboChart({ data, columns, config }) {
 
       if (!config.xAxisShowLabels) {
         xAxisGenerator.tickFormat('')
+      } else {
+        const xFmt = getFormatter(getFormatOpts(config, 'xAxis'))
+        if (xFmt) xAxisGenerator.tickFormat(xFmt)
       }
       if (!config.xAxisShowTickMarks) {
         xAxisGenerator.tickSize(0)
       }
 
       const xFont = resolveFont('xAxisFont')
+      const xLabelFont = resolveFont('xAxisLabelFont')
       const xAxisGroup = g.append('g')
         .attr('class', 'x-axis')
         .attr('transform', `translate(0,${chartHeight})`)
@@ -631,6 +635,14 @@ function ComboChart({ data, columns, config }) {
         .style('font-weight', xFont.weight)
         .style('font-size', xFont.size + 'px')
         .style('font-style', xFont.italic ? 'italic' : 'normal')
+
+      // Apply separate label font to tick text
+      xAxisGroup.selectAll('.tick text')
+        .style('font-family', xLabelFont.family)
+        .style('font-weight', xLabelFont.weight)
+        .style('font-size', xLabelFont.size + 'px')
+        .style('font-style', xLabelFont.italic ? 'italic' : 'normal')
+        .style('fill', xLabelFont.color)
 
       // Tick and axis line colors
       xAxisGroup.selectAll('.tick line').style('stroke', config.xAxisTickColor || '#999')
@@ -695,6 +707,7 @@ function ComboChart({ data, columns, config }) {
       }
 
       const yLeftFont = resolveFont('yAxisLeftFont')
+      const yLeftLabelFont = resolveFont('yAxisLeftLabelFont')
       const yAxisLeftGroup = g.append('g')
         .attr('class', 'y-axis-left')
         .call(yAxisLeftGenerator)
@@ -703,6 +716,14 @@ function ComboChart({ data, columns, config }) {
         .style('font-weight', yLeftFont.weight)
         .style('font-size', yLeftFont.size + 'px')
         .style('font-style', yLeftFont.italic ? 'italic' : 'normal')
+
+      // Apply separate label font to tick text
+      yAxisLeftGroup.selectAll('.tick text')
+        .style('font-family', yLeftLabelFont.family)
+        .style('font-weight', yLeftLabelFont.weight)
+        .style('font-size', yLeftLabelFont.size + 'px')
+        .style('font-style', yLeftLabelFont.italic ? 'italic' : 'normal')
+        .style('fill', yLeftLabelFont.color)
 
       // Tick and axis line colors
       yAxisLeftGroup.selectAll('.tick line').style('stroke', config.yAxisLeftTickColor || '#999')
@@ -754,6 +775,7 @@ function ComboChart({ data, columns, config }) {
       }
 
       const yRightFont = resolveFont('yAxisRightFont')
+      const yRightLabelFont = resolveFont('yAxisRightLabelFont')
       const yAxisRightGroup = g.append('g')
         .attr('class', 'y-axis-right')
         .attr('transform', `translate(${chartWidth},0)`)
@@ -763,6 +785,14 @@ function ComboChart({ data, columns, config }) {
         .style('font-weight', yRightFont.weight)
         .style('font-size', yRightFont.size + 'px')
         .style('font-style', yRightFont.italic ? 'italic' : 'normal')
+
+      // Apply separate label font to tick text
+      yAxisRightGroup.selectAll('.tick text')
+        .style('font-family', yRightLabelFont.family)
+        .style('font-weight', yRightLabelFont.weight)
+        .style('font-size', yRightLabelFont.size + 'px')
+        .style('font-style', yRightLabelFont.italic ? 'italic' : 'normal')
+        .style('fill', yRightLabelFont.color)
 
       // Tick and axis line colors
       yAxisRightGroup.selectAll('.tick line').style('stroke', config.yAxisRightTickColor || '#999')
@@ -916,54 +946,98 @@ function ComboChart({ data, columns, config }) {
     ? `${config.legendBorderWidth || 1}px ${config.legendBorderStyle || 'solid'} ${config.legendBorderColor || themeColors.gridColor || '#e0e0e0'}`
     : 'none'
   const lgFont = config.legendFont || {}
+  const legendLayout = config.legendLayout || 'wrap'
+  const vAlign = config.legendVerticalAlign || 'top'
+  const hAlignMap = { left: 'flex-start', center: 'center', right: 'flex-end' }
+  const vAlignMap = { top: 'flex-start', center: 'center', bottom: 'flex-end' }
+
+  const legendPad = config.legendPadding !== undefined ? config.legendPadding : 14
+  const legendGap = config.legendGap !== undefined ? config.legendGap : 24
+
   const legendStyle = {
     display: 'flex',
-    flexDirection: isVerticalLegend ? 'column' : 'row',
-    flexWrap: 'wrap',
-    justifyContent: config.legendAlign === 'center' ? 'center' :
-                     config.legendAlign === 'right' ? 'flex-end' : 'flex-start',
-    alignItems: 'center',
-    gap: (config.legendGap || 24) + 'px',
-    padding: (config.legendPadding !== undefined ? config.legendPadding : 14) + 'px 20px',
+    flexShrink: 0,
     fontFamily: lgFont.family || fontFamily,
     fontSize: (lgFont.size || 13) + 'px',
     fontWeight: lgFont.weight || 500,
     fontStyle: lgFont.italic ? 'italic' : 'normal',
     color: lgFont.color || themeColors.axisColor || '#666',
-    background: config.theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-    borderTop: legendBorder
+    background: config.legendBgColor && config.legendBgColor !== 'transparent'
+      ? config.legendBgColor
+      : 'transparent',
+    border: 'none',
+    ...(isVerticalLegend ? {
+      // Side legends: column layout, width constrained via CSS
+      flexDirection: 'column',
+      flexWrap: 'nowrap',
+      alignItems: hAlignMap[config.legendAlign] || 'flex-start',
+      gap: legendGap > 24 ? legendGap + 'px' : '10px',
+      padding: `${legendPad}px 14px`,
+      width: 'auto',
+    } : {
+      // Top/bottom legends: row or column layout based on setting
+      flexDirection: legendLayout === 'nowrap' ? 'row' : 'column',
+      flexWrap: 'nowrap',
+      justifyContent: legendLayout === 'nowrap' ? hAlignMap[config.legendAlign] || 'center' : 'flex-start',
+      alignItems: legendLayout === 'nowrap' ? 'center' : hAlignMap[config.legendAlign] || 'center',
+      gap: legendGap + 'px',
+      padding: `${legendPad}px 20px`,
+      width: '100%',
+      ...(legendLayout === 'nowrap' ? { overflow: 'hidden' } : {}),
+    }),
   }
+
+  // Position-specific border (adjacent to chart edge)
+  const legendBorderStyle = (pos) => {
+    if (pos === 'top') return { borderBottom: legendBorder }
+    if (pos === 'bottom') return { borderTop: legendBorder }
+    if (pos === 'left') return { borderRight: legendBorder }
+    if (pos === 'right') return { borderLeft: legendBorder }
+    return {}
+  }
+
+  const legendEl = config.showLegend && legendData.length > 0 && (
+    <div className="chart-legend" style={{
+      ...legendStyle,
+      ...legendBorderStyle(config.legendPosition),
+      ...(isVerticalLegend ? { alignSelf: vAlignMap[vAlign] || 'start' } : {}),
+    }}>
+      {legendData.map((item, i) => (
+        <div key={i} className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {item.type === 'bar'
+            ? <div style={{ width: 14, height: 14, backgroundColor: item.color, borderRadius: 4, flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }} />
+            : <div style={{ width: 20, height: 3, backgroundColor: item.color, borderRadius: 9999, flexShrink: 0 }} />
+          }
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+
+  const chartEl = (
+    <div ref={containerRef} className="combo-chart-container">
+      <svg ref={svgRef}></svg>
+    </div>
+  )
+
+  const pos = config.legendPosition || 'bottom'
 
   return (
     <>
-      {config.showLegend && config.legendPosition === 'top' && legendData.length > 0 && (
-        <div className="chart-legend" style={{...legendStyle, borderTop: 'none', borderBottom: legendBorder}}>
-          {legendData.map((item, i) => (
-            <div key={i} className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {item.type === 'bar'
-                ? <div style={{ width: 14, height: 14, backgroundColor: item.color, borderRadius: 4, flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }} />
-                : <div style={{ width: 20, height: 3, backgroundColor: item.color, borderRadius: 9999, flexShrink: 0 }} />
-              }
-              <span>{item.label}</span>
-            </div>
-          ))}
+      {isVerticalLegend ? (
+        <div className={`chart-with-side-legend legend-layout-${pos}`} style={{
+          flex: '1 1 auto', minHeight: 0, overflow: 'hidden'
+        }}>
+          {pos === 'left' && legendEl}
+          {chartEl}
+          {pos === 'right' && legendEl}
         </div>
-      )}
-      <div ref={containerRef} className="combo-chart-container">
-        <svg ref={svgRef}></svg>
-      </div>
-      {config.showLegend && config.legendPosition !== 'top' && legendData.length > 0 && (
-        <div className="chart-legend" style={legendStyle}>
-          {legendData.map((item, i) => (
-            <div key={i} className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {item.type === 'bar'
-                ? <div style={{ width: 14, height: 14, backgroundColor: item.color, borderRadius: 4, flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }} />
-                : <div style={{ width: 20, height: 3, backgroundColor: item.color, borderRadius: 9999, flexShrink: 0 }} />
-              }
-              <span>{item.label}</span>
-            </div>
-          ))}
-        </div>
+      ) : (
+        <>
+          {pos === 'top' && legendEl}
+          {chartEl}
+          {pos === 'bottom' && legendEl}
+        </>
       )}
       {hintText && (
         <div className="chart-hint">{hintText}</div>

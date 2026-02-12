@@ -125,7 +125,36 @@ body {
 
 .chart-legend {
   flex-shrink: 0;
-  width: 100%;
+}
+
+/* Side legend layouts using CSS Grid (matching original extension) */
+.chart-with-side-legend {
+  display: grid;
+}
+
+.chart-with-side-legend.legend-layout-left {
+  grid-template-columns: auto 1fr;
+}
+
+.chart-with-side-legend.legend-layout-right {
+  grid-template-columns: 1fr auto;
+}
+
+.chart-with-side-legend .combo-chart-container {
+  min-width: 0;
+  min-height: 0;
+}
+
+.chart-with-side-legend .chart-legend {
+  min-width: 80px;
+  max-width: 250px;
+  overflow: hidden;
+}
+
+.chart-with-side-legend .chart-legend .legend-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chart-hint {
