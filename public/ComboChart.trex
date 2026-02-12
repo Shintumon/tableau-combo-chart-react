@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest manifest-version="0.1" xmlns="http://www.tableau.com/xml/extension_manifest">
-  <worksheet-extension id="com.tableau.extension.combochart" extension-version="1.3.0">
+  <worksheet-extension id="com.tableau.extension.combochart" extension-version="1.4.0">
     <default-locale>en_US</default-locale>
     <name resource-id="name"/>
     <description>Customizable combo chart with dual bars and line, featuring full marks card controls</description>
     <author name="John" email="shintumon@gmail.com" organization="Shintumon" website="https://github.com/Shintumon/tableau-combo-chart-react"/>
     <min-api-version>1.11</min-api-version>
     <source-location>
-      <url>http://localhost:8766/</url>
+      <url>https://tableau-combo-chart-react.pages.dev/index.html</url>
     </source-location>
     <icon>iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAAAlhJREFUOI2Nkj1oU2EUhp9z7k1oYoIx/lRrFbRiJ0EHBxEHUSg4iCBYcHBwEBcnF+cOTkIHByfRQRCl4CAIUkQU64+DUFDQYqsWogbTJrn3O58OPRAhdt/l/L3ve17hC2vP64WwGvnGAAUlqWsCqNpihRRJQkgk1sRI9P6sNQJAnX7zJIqDsZBKgIQSNUEukaHS6l4A4uMHvguQa9d/p0rBXQIghgLKaRjJlq/2J8gTA0ggDhOBCAKCRkaIShAzhkCYALQBYEQIaEQQIIAAxBggIgSJEVAwIsDQBqgJqkJYjQSIBioQEEKIIB7RaDKIC2mCGAQRVQFNEPGI6gZALlCnMOJRYpIcSbygmuQI8bkJYiBCJYkNjhDBRB2mZiJ0HhKFSAJE+MNl2Nj0jz8xLxtJXWKqjuvJJEG8hPztT+RJOq8BpmmPvQW4R0qo4BKCvzagGEWNQ6aJJgJJQjKzB+EQxp4kDjG81QQgpxieuABRAIHQAFCe8AHPUxSLGLvS5TKauxBVlNx4CEDjEDGNBQ5IzIbqNcfz9K/wEH42CKQDKy2gASxTAyIRBHu9/K0rUElmZGIEZ8X2PAcSDoiCQEIkIFEiJxnTh8+6oizZG+bW5T7TN68VqLGXBiKJ1Ek8EomPDJIxnQl9u1H46e1LvGZCCCFARImNIZqWIHIupKKvwsDO+6b/2GTfn41Ea+QJSJKkNPGElkz+IW0VPyeuXEJiSI/gPTnLQ5TXYZxxjAIBAJRIJImhOtMxV75+47njLWR+KDWCBFUzI/8K/Av7C2ETYSkq5gAAAABJRU5ErkJggg==</icon>
     <permissions>
