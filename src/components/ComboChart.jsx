@@ -833,6 +833,15 @@ function ComboChart({ data, columns, config }) {
       const tooltip = d3.select(tooltipRef.current)
       const displayName = getDisplayName(type, fieldNames, config)
 
+      // Get formatters for each measure (using label formatters)
+      const bar1Fmt = getFormatter(getFormatOpts(config, 'bar1Labels')) || (v => d3.format(',.2f')(v))
+      const bar2Fmt = getFormatter(getFormatOpts(config, 'bar2Labels')) || (v => d3.format(',.2f')(v))
+      const lineFmt = getFormatter(getFormatOpts(config, 'lineLabels')) || (v => d3.format(',.2f')(v))
+
+      // Format current value based on type
+      const currentFormatter = type === 'bar1' ? bar1Fmt : type === 'bar2' ? bar2Fmt : lineFmt
+      const valueFormatted = currentFormatter(value)
+
       let content = ''
 
       // Custom template mode
@@ -845,10 +854,9 @@ function ComboChart({ data, columns, config }) {
 
         // Find the data point to get all values
         const dataPoint = chartData.find(d => d.category === category)
-        const bar1Formatted = dataPoint?.bar1 != null ? d3.format(',.2f')(dataPoint.bar1) : ''
-        const bar2Formatted = dataPoint?.bar2 != null ? d3.format(',.2f')(dataPoint.bar2) : ''
-        const lineFormatted = dataPoint?.line != null ? d3.format(',.2f')(dataPoint.line) : ''
-        const valueFormatted = d3.format(',.2f')(value)
+        const bar1Formatted = dataPoint?.bar1 != null ? bar1Fmt(dataPoint.bar1) : ''
+        const bar2Formatted = dataPoint?.bar2 != null ? bar2Fmt(dataPoint.bar2) : ''
+        const lineFormatted = dataPoint?.line != null ? lineFmt(dataPoint.line) : ''
 
         // Parse template line by line
         const lines = config.tooltipTemplate.split('\n')
@@ -879,11 +887,11 @@ function ComboChart({ data, columns, config }) {
           content += `<div class="tooltip-title"><strong>${category}</strong></div>`
         }
         if (config.tooltipShowMeasureName && config.tooltipShowValue) {
-          content += `<div class="tooltip-row"><span class="tooltip-label">${displayName} :</span> <span class="tooltip-value">${d3.format(',.2f')(value)}</span></div>`
+          content += `<div class="tooltip-row"><span class="tooltip-label">${displayName} :</span> <span class="tooltip-value">${valueFormatted}</span></div>`
         } else if (config.tooltipShowMeasureName) {
           content += `<div class="tooltip-row">${displayName}</div>`
         } else if (config.tooltipShowValue) {
-          content += `<div class="tooltip-row">${d3.format(',.2f')(value)}</div>`
+          content += `<div class="tooltip-row">${valueFormatted}</div>`
         }
       }
 
