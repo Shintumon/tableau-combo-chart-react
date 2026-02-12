@@ -556,19 +556,21 @@ select {
 
 /* Number Stepper */
 .number-stepper {
-  display: flex;
-  align-items: center;
-  gap: 0;
+  display: inline-flex;
+  align-items: stretch;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   overflow: hidden;
   height: 30px;
+  flex-shrink: 0;
 }
 
 .number-stepper button {
   width: 28px;
+  min-width: 28px;
   height: 100%;
   border: none;
+  border-radius: 0;
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: 14px;
@@ -579,7 +581,9 @@ select {
   justify-content: center;
   transition: background 0.15s;
   padding: 0;
+  margin: 0;
   line-height: 1;
+  box-shadow: none;
 }
 
 .number-stepper button:hover {
@@ -592,12 +596,19 @@ select {
   color: white;
 }
 
-.number-stepper input {
+.number-stepper button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.number-stepper input[type="number"] {
   width: 44px;
+  min-width: 44px;
   height: 100%;
   border: none;
   border-left: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);
+  border-radius: 0;
   text-align: center;
   font-size: 12px;
   font-weight: 600;
@@ -605,27 +616,32 @@ select {
   color: var(--color-text);
   background: var(--color-bg);
   padding: 0;
+  margin: 0;
+  box-shadow: none;
   -moz-appearance: textfield;
 }
 
-.number-stepper input::-webkit-outer-spin-button,
-.number-stepper input::-webkit-inner-spin-button {
+.number-stepper input[type="number"]::-webkit-outer-spin-button,
+.number-stepper input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.number-stepper input:focus {
+.number-stepper input[type="number"]:focus {
   outline: none;
   background: var(--color-primary-light);
+  box-shadow: none;
 }
 
 .number-stepper .stepper-suffix {
   font-size: 11px;
   color: var(--color-text-muted);
-  padding-right: 6px;
+  padding: 0 6px 0 0;
+  margin: 0;
   background: var(--color-bg);
   line-height: 30px;
   border-right: 1px solid var(--color-border);
+  white-space: nowrap;
 }
 
 /* Checkboxes */
