@@ -15,7 +15,7 @@ export const cleanFieldName = (name) => {
 
 /**
  * Get display name for a measure (bar1, bar2, or line)
- * Priority: custom label > cleaned field name > 'Unknown'
+ * Priority: custom label > axis title (for dimension) > cleaned field name > 'Unknown'
  */
 export const getDisplayName = (type, fieldNames, config) => {
   const fieldName = type === 'bar1' ? fieldNames?.bar1
@@ -30,6 +30,9 @@ export const getDisplayName = (type, fieldNames, config) => {
 
   // Custom label takes priority
   if (customLabel) return customLabel;
+
+  // For dimension, also check X-axis title as fallback
+  if (type === 'dimension' && config?.xAxisTitle) return config.xAxisTitle;
 
   // Otherwise use cleaned field name
   if (!fieldName) return type === 'dimension' ? 'Category' : 'Unknown';

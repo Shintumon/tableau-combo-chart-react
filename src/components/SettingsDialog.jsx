@@ -1570,9 +1570,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 const start = textarea.selectionStart
                                 const end = textarea.selectionEnd
                                 const text = textarea.value
-                                const fieldNames = getFieldNames(localConfig)
-                                const displayName = getDisplayName('dimension', fieldNames, localConfig)
-                                const insertion = `${displayName} : {dimension}`
+                                const insertion = `{dimension_label} : {dimension}`
                                 textarea.value = text.substring(0, start) + insertion + text.substring(end)
                                 textarea.selectionStart = textarea.selectionEnd = start + insertion.length
                                 textarea.focus()
@@ -1655,11 +1653,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           <textarea id="tooltip-template"
                             value={localConfig.tooltipTemplate}
                             onChange={(e) => updateConfig('tooltipTemplate', e.target.value)}
-                            placeholder="e.g., Period : {dimension}&#10;Sales : {bar1_value}&#10;Budget : {bar2_value}&#10;Profit : {line_value}"
+                            placeholder="e.g., {dimension_label} : {dimension}&#10;{bar1_label} : {bar1_value}&#10;{bar2_label} : {bar2_value}&#10;{line_label} : {line_value}"
                             rows={5}
                             style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }} />
                           <p className="help-text" style={{ marginTop: 6 }}>
-                            <strong>Tokens:</strong> <code>{'{dimension}'}</code>, <code>{'{bar1}'}</code>, <code>{'{bar2}'}</code>, <code>{'{line}'}</code>,
+                            <strong>Tokens:</strong> <code>{'{dimension}'}</code>, <code>{'{dimension_label}'}</code>, <code>{'{bar1}'}</code>, <code>{'{bar2}'}</code>, <code>{'{line}'}</code>,
                             <code>{'{bar1_label}'}</code>, <code>{'{bar1_value}'}</code>, <code>{'{measure}'}</code>, <code>{'{value}'}</code><br/>
                             <strong>HTML:</strong> Select text and use formatting buttons above, or use tags like <code>&lt;b&gt;</code>, <code>&lt;i&gt;</code>, <code>&lt;u&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;small&gt;</code>, <code>&lt;br/&gt;</code>
                           </p>

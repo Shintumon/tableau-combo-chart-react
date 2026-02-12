@@ -95,12 +95,6 @@ function ComboChart({ data, columns, config }) {
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`)
 
-    // Strip aggregation prefixes from field names for display (e.g. "SUM(Sales)" → "Sales")
-    const getDisplayName = (fieldName) => {
-      if (!fieldName) return ''
-      return fieldName.replace(/^(SUM|AVG|MIN|MAX|COUNT|AGG|MEDIAN|STDEV|VAR)\((.+)\)$/i, '$2').trim()
-    }
-
     // Extract field names from config (encoding-based mappings only, no fallbacks)
     const dimensionField = config.dimension
     const bar1Field = config.bar1Measure
@@ -677,7 +671,7 @@ function ComboChart({ data, columns, config }) {
 
       // X Axis Title (offset adjusts for rotated labels)
       // Falls back to dimension field name if no custom title set
-      const xTitle = config.xAxisTitle || getDisplayName(dimensionField)
+      const xTitle = config.xAxisTitle || getDisplayName('dimension', fieldNames, config)
       if (config.xAxisShowTitle && xTitle) {
         const absRotation = Math.abs(config.xAxisRotation || 0)
         const titleYOffset = absRotation === 0 ? 45 : absRotation <= 45 ? 60 : 75
@@ -743,7 +737,7 @@ function ComboChart({ data, columns, config }) {
 
       // Y Axis Left Title
       // Falls back to "Bar1Name / Bar2Name" from field names
-      const leftParts = [getDisplayName(bar1Field), getDisplayName(bar2Field)].filter(Boolean)
+      const leftParts = [getDisplayName('bar1', fieldNames, config), getDisplayName('bar2', fieldNames, config)].filter(Boolean)
       const yLeftTitle = config.yAxisLeftTitle || leftParts.join(' / ')
       if (config.yAxisLeftShowTitle && yLeftTitle) {
         const titleXOffset = -Math.max(margin.left - 10, 60)
@@ -812,7 +806,7 @@ function ComboChart({ data, columns, config }) {
 
       // Y Axis Right Title
       // Falls back to line field name
-      const yRightTitle = config.yAxisRightTitle || getDisplayName(lineField)
+      const yRightTitle = config.yAxisRightTitle || getDisplayName('line', fieldNames, config)
       if (config.yAxisRightShowTitle && yRightTitle) {
         const titleXOffset = -Math.max(margin.right - 15, 45)
         yAxisRightGroup.append('text')
@@ -832,9 +826,6 @@ function ComboChart({ data, columns, config }) {
     // Title is rendered in the DOM header (App.jsx), not in SVG
     // Legend is rendered as DOM elements below the SVG (see JSX return)
 
-    // Get field names for display (used in tooltips and legend)
-    const fieldNames = getFieldNames(config)
-
     // Tooltip functions
     function showTooltip(event, category, type, value) {
       if (!tooltipRef.current) return
@@ -853,7 +844,7 @@ function ComboChart({ data, columns, config }) {
         const lineLabel = getDisplayName('line', fieldNames, config)
 
         // Find the data point to get all values
-        const dataPoint = data.find(d => d.category === category)
+        const dataPoint = chartData.find(d => d.category === category)
         const bar1Formatted = dataPoint?.bar1 != null ? d3.format(',.2f')(dataPoint.bar1) : ''
         const bar2Formatted = dataPoint?.bar2 != null ? d3.format(',.2f')(dataPoint.bar2) : ''
         const lineFormatted = dataPoint?.line != null ? d3.format(',.2f')(dataPoint.line) : ''
@@ -888,7 +879,7 @@ function ComboChart({ data, columns, config }) {
           content += `<div class="tooltip-title"><strong>${category}</strong></div>`
         }
         if (config.tooltipShowMeasureName && config.tooltipShowValue) {
-          content += `<div class="tooltip-row"><span class="tooltip-label">${displayName}:</span> <span class="tooltip-value">${d3.format(',.2f')(value)}</span></div>`
+          content += `<div class="tooltip-row"><span class="tooltip-label">${displayName} :</span> <span class="tooltip-value">${d3.format(',.2f')(value)}</span></div>`
         } else if (config.tooltipShowMeasureName) {
           content += `<div class="tooltip-row">${displayName}</div>`
         } else if (config.tooltipShowValue) {
@@ -962,6 +953,9 @@ function ComboChart({ data, columns, config }) {
         ? `Tip: Add a field to ${unmappedFields[0]} on the marks card to display it`
         : `Tip: Add fields to ${unmappedFields.join(' and ')} on the marks card to display them`)
     : null
+
+  // Get field names for display names
+  const fieldNames = getFieldNames(config)
 
   // Build legend data for DOM rendering
   const legendData = []
