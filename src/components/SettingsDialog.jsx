@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Config } from '../utils/config'
 import FormatControls from './FormatControls'
-import { cleanFieldName } from '../utils/displayNames'
+import { cleanFieldName, getDisplayName, getFieldNames } from '../utils/displayNames'
 
 function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDialog = false, debugLogs: externalDebugLogs, onClearDebugLogs, workbookFont }) {
   const [localConfig, setLocalConfig] = useState(() => {
@@ -133,10 +133,19 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     )
   }
 
-  // Field name badge component
-  const FieldBadge = ({ fieldName }) => {
-    if (!fieldName) return null
-    const cleanName = cleanFieldName(fieldName)
+  // Field name badge component - shows custom label if set, otherwise field name
+  const FieldBadge = ({ type, customLabel }) => {
+    const fieldNames = getFieldNames(localConfig)
+    const displayName = customLabel || getDisplayName(type, fieldNames, localConfig)
+
+    // Don't show if no field is mapped
+    const fieldName = type === 'bar1' ? localConfig.bar1Measure
+      : type === 'bar2' ? localConfig.bar2Measure
+      : type === 'line' ? localConfig.lineMeasure
+      : null
+
+    if (!fieldName && !customLabel) return null
+
     return (
       <span style={{
         marginLeft: 6,
@@ -148,7 +157,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
         fontWeight: 600,
         letterSpacing: '0.02em'
       }}>
-        {cleanName}
+        {displayName}
       </span>
     )
   }
@@ -511,7 +520,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 <div className="divider" />
                 <div className="section-label">
                   Bar 1
-                  <FieldBadge fieldName={localConfig.bar1Measure} />
+                  <FieldBadge type="bar1" />
                 </div>
                 <div className="inline-row indent">
                   <div className="color-item compact">
@@ -553,7 +562,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 <div className="divider" />
                 <div className="section-label">
                   Bar 2
-                  <FieldBadge fieldName={localConfig.bar2Measure} />
+                  <FieldBadge type="bar2" />
                 </div>
                 <div className="inline-row indent">
                   <div className="color-item compact">
@@ -604,7 +613,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
 
                 <div className="section-label">
                   Line
-                  <FieldBadge fieldName={localConfig.lineMeasure} />
+                  <FieldBadge type="line" />
                 </div>
 
                 <div className="inline-row indent">
@@ -841,9 +850,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 <div className="divider" />
                 <div className="section-label">
                   Y Axis Left (Bars)
-                  {(localConfig.bar1Measure || localConfig.bar2Measure) && (
-                    <FieldBadge fieldName={[localConfig.bar1Measure, localConfig.bar2Measure].filter(Boolean).map(cleanFieldName).join(' / ')} />
-                  )}
+                  {(localConfig.bar1Measure || localConfig.bar2Measure) && (() => {
+                    const fieldNames = getFieldNames(localConfig)
+                    const labels = []
+                    if (localConfig.bar1Measure) labels.push(getDisplayName('bar1', fieldNames, localConfig))
+                    if (localConfig.bar2Measure) labels.push(getDisplayName('bar2', fieldNames, localConfig))
+                    return <FieldBadge customLabel={labels.join(' / ')} />
+                  })()}
                 </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.yAxisLeftShow}
@@ -935,7 +948,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 <div className="divider" />
                 <div className="section-label">
                   Y Axis Right (Line)
-                  <FieldBadge fieldName={localConfig.lineMeasure} />
+                  <FieldBadge type="line" />
                 </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.yAxisRightShow}
@@ -1172,7 +1185,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
 
                 <div className="section-label">
                   Bar 1 Labels
-                  <FieldBadge fieldName={localConfig.bar1Measure} />
+                  <FieldBadge type="bar1" />
                 </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.bar1LabelsShow}
@@ -1213,7 +1226,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 <div className="divider" />
                 <div className="section-label">
                   Bar 2 Labels
-                  <FieldBadge fieldName={localConfig.bar2Measure} />
+                  <FieldBadge type="bar2" />
                 </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.bar2LabelsShow}
@@ -1254,7 +1267,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 <div className="divider" />
                 <div className="section-label">
                   Line Labels
-                  <FieldBadge fieldName={localConfig.lineMeasure} />
+                  <FieldBadge type="line" />
                 </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.lineLabelsShow}
