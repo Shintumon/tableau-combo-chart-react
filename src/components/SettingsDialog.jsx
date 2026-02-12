@@ -1031,29 +1031,27 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                   <span>Show Legend Border</span>
                 </label>
                 {(localConfig.showHeaderBorder || localConfig.showLegendBorder) && (
-                  <>
-                    <div className="form-row indent">
-                      <div className="form-group">
-                        <label className="form-label">Style</label>
-                        <select value={localConfig.separatorStyle || 'solid'}
-                          onChange={(e) => updateConfig('separatorStyle', e.target.value)}>
-                          <option value="solid">Solid</option>
-                          <option value="dashed">Dashed</option>
-                          <option value="dotted">Dotted</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Width</label>
-                        <NumberStepper value={localConfig.separatorWidth || 1} min={1} max={5} suffix="px"
-                          onChange={(v) => updateConfig('separatorWidth', v)} />
-                      </div>
+                  <div className="inline-row indent">
+                    <div className="form-group compact">
+                      <label className="form-label">Style</label>
+                      <select value={localConfig.separatorStyle || 'solid'}
+                        onChange={(e) => updateConfig('separatorStyle', e.target.value)}>
+                        <option value="solid">Solid</option>
+                        <option value="dashed">Dashed</option>
+                        <option value="dotted">Dotted</option>
+                      </select>
                     </div>
-                    <div className="color-item compact indent">
+                    <div className="form-group compact">
+                      <label className="form-label">Width</label>
+                      <NumberStepper value={localConfig.separatorWidth || 1} min={1} max={5} suffix="px"
+                        onChange={(v) => updateConfig('separatorWidth', v)} />
+                    </div>
+                    <div className="color-item compact">
                       <label>Color</label>
                       <input type="color" value={localConfig.separatorColor || '#e2e5ea'}
                         onChange={(e) => updateConfig('separatorColor', e.target.value)} />
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             )}
