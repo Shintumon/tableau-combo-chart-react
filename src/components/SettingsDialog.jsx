@@ -1577,6 +1577,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 updateConfig('tooltipTemplate', textarea.value)
                               }}>
                               Dimension
+                              {(() => {
+                                const fieldNames = getFieldNames(localConfig)
+                                const displayName = getDisplayName('dimension', fieldNames, localConfig)
+                                return displayName !== 'Category' ? ` (${displayName})` : ''
+                              })()}
                             </button>
                             <button type="button" className="btn-secondary btn-sm"
                               onClick={() => {
@@ -1591,6 +1596,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 updateConfig('tooltipTemplate', textarea.value)
                               }}>
                               Bar 1
+                              {(() => {
+                                const fieldNames = getFieldNames(localConfig)
+                                const displayName = getDisplayName('bar1', fieldNames, localConfig)
+                                return displayName !== 'Unknown' ? ` (${displayName})` : ''
+                              })()}
                             </button>
                             <button type="button" className="btn-secondary btn-sm"
                               onClick={() => {
@@ -1605,6 +1615,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 updateConfig('tooltipTemplate', textarea.value)
                               }}>
                               Bar 2
+                              {(() => {
+                                const fieldNames = getFieldNames(localConfig)
+                                const displayName = getDisplayName('bar2', fieldNames, localConfig)
+                                return displayName !== 'Unknown' ? ` (${displayName})` : ''
+                              })()}
                             </button>
                             <button type="button" className="btn-secondary btn-sm"
                               onClick={() => {
@@ -1619,6 +1634,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 updateConfig('tooltipTemplate', textarea.value)
                               }}>
                               Line
+                              {(() => {
+                                const fieldNames = getFieldNames(localConfig)
+                                const displayName = getDisplayName('line', fieldNames, localConfig)
+                                return displayName !== 'Unknown' ? ` (${displayName})` : ''
+                              })()}
                             </button>
                           </div>
                         </div>
@@ -1656,7 +1676,9 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                   .replace(/\{line\}/g, `${getDisplayName('line', fieldNames, localConfig) || 'Line'}: 42.5%`)
                                   .replace(/\{measure\}/g, 'Bar 1')
                                   .replace(/\{value\}/g, '1,234')
-                                return preview.trim() ? <div key={i}>{preview}</div> : null
+                                return preview.trim() ? (
+                                  <div key={i} className="tooltip-row" dangerouslySetInnerHTML={{ __html: preview }} />
+                                ) : null
                               })}
                             </div>
                           </div>
