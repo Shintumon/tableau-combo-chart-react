@@ -94,16 +94,16 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     const containerStyle = {
       display: 'inline-flex', alignItems: 'stretch', border: '1px solid var(--color-border, #e2e5ea)',
       borderRadius: '6px', overflow: 'hidden', height: '30px', flexShrink: 0,
-      width: 'fit-content', alignSelf: 'flex-start'
+      width: '148px', alignSelf: 'flex-start'
     }
     const btnStyle = {
-      width: '28px', minWidth: '28px', height: '100%', border: 'none', borderRadius: 0,
+      flex: '0 0 28px', width: '28px', height: '100%', border: 'none', borderRadius: 0,
       background: 'var(--color-surface, #f8f9fb)', color: 'var(--color-text-secondary, #6b7280)',
       fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex',
       alignItems: 'center', justifyContent: 'center', padding: 0, margin: 0, lineHeight: 1
     }
     const inputStyle = {
-      width: '44px', minWidth: '44px', height: '100%', border: 'none',
+      flex: '1 1 auto', minWidth: 0, height: '100%', border: 'none',
       borderLeft: '1px solid var(--color-border, #e2e5ea)',
       borderRight: suffix ? 'none' : '1px solid var(--color-border, #e2e5ea)',
       borderRadius: 0, textAlign: 'center', fontSize: '12px', fontWeight: 600,
@@ -112,10 +112,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
       MozAppearance: 'textfield', WebkitAppearance: 'none'
     }
     const suffixStyle = {
-      fontSize: '11px', color: 'var(--color-text-muted, #9ca3af)', padding: '0 6px',
+      flex: '0 0 24px', width: '24px', textAlign: 'center',
+      fontSize: '11px', color: 'var(--color-text-muted, #9ca3af)', padding: 0,
       margin: 0, background: 'var(--color-bg, #fff)', lineHeight: '30px',
       borderRight: '1px solid var(--color-border, #e2e5ea)', whiteSpace: 'nowrap',
-      display: 'flex', alignItems: 'center'
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
     }
     return (
       <div style={containerStyle}>
