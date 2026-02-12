@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Config } from '../utils/config'
 import FormatControls from './FormatControls'
+import { cleanFieldName } from '../utils/displayNames'
 
 function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDialog = false, debugLogs: externalDebugLogs, onClearDebugLogs, workbookFont }) {
   const [localConfig, setLocalConfig] = useState(() => {
@@ -129,6 +130,26 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
         <button type="button" style={{ ...btnStyle, opacity: value >= max ? 0.35 : 1 }}
           onClick={() => onChange(Math.min(max, parseFloat(((value || 0) + step).toFixed(2))))} disabled={value >= max}>+</button>
       </div>
+    )
+  }
+
+  // Field name badge component
+  const FieldBadge = ({ fieldName }) => {
+    if (!fieldName) return null
+    const cleanName = cleanFieldName(fieldName)
+    return (
+      <span style={{
+        marginLeft: 6,
+        padding: '2px 8px',
+        borderRadius: 4,
+        background: 'var(--color-primary-light, #eef1fd)',
+        color: 'var(--color-primary, #4361ee)',
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.02em'
+      }}>
+        {cleanName}
+      </span>
     )
   }
 
@@ -361,17 +382,38 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 <div className="section-label">Custom Labels</div>
                 <p className="help-text">Override legend labels for each measure. Leave blank to use measure name.</p>
                 <div className="form-group">
-                  <label className="form-label">Bar 1</label>
+                  <label className="form-label">
+                    Bar 1
+                    {localConfig.bar1Measure && (
+                      <span style={{ marginLeft: 6, color: 'var(--color-text-secondary)', fontSize: 11, fontWeight: 400 }}>
+                        ({cleanFieldName(localConfig.bar1Measure)})
+                      </span>
+                    )}
+                  </label>
                   <input type="text" value={localConfig.legendBar1Label} placeholder="Use measure name"
                     onChange={(e) => updateConfig('legendBar1Label', e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Bar 2</label>
+                  <label className="form-label">
+                    Bar 2
+                    {localConfig.bar2Measure && (
+                      <span style={{ marginLeft: 6, color: 'var(--color-text-secondary)', fontSize: 11, fontWeight: 400 }}>
+                        ({cleanFieldName(localConfig.bar2Measure)})
+                      </span>
+                    )}
+                  </label>
                   <input type="text" value={localConfig.legendBar2Label} placeholder="Use measure name"
                     onChange={(e) => updateConfig('legendBar2Label', e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Line</label>
+                  <label className="form-label">
+                    Line
+                    {localConfig.lineMeasure && (
+                      <span style={{ marginLeft: 6, color: 'var(--color-text-secondary)', fontSize: 11, fontWeight: 400 }}>
+                        ({cleanFieldName(localConfig.lineMeasure)})
+                      </span>
+                    )}
+                  </label>
                   <input type="text" value={localConfig.legendLineLabel} placeholder="Use measure name"
                     onChange={(e) => updateConfig('legendLineLabel', e.target.value)} />
                 </div>
@@ -467,7 +509,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 )}
 
                 <div className="divider" />
-                <div className="section-label">Bar 1</div>
+                <div className="section-label">
+                  Bar 1
+                  <FieldBadge fieldName={localConfig.bar1Measure} />
+                </div>
                 <div className="inline-row indent">
                   <div className="color-item compact">
                     <label>Fill</label>
@@ -506,7 +551,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 </div>
 
                 <div className="divider" />
-                <div className="section-label">Bar 2</div>
+                <div className="section-label">
+                  Bar 2
+                  <FieldBadge fieldName={localConfig.bar2Measure} />
+                </div>
                 <div className="inline-row indent">
                   <div className="color-item compact">
                     <label>Fill</label>
@@ -554,7 +602,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                   <p>Line style and data point markers</p>
                 </div>
 
-                <div className="section-label">Line</div>
+                <div className="section-label">
+                  Line
+                  <FieldBadge fieldName={localConfig.lineMeasure} />
+                </div>
 
                 <div className="inline-row indent">
                   <div className="color-item compact">
@@ -788,7 +839,12 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 )}
 
                 <div className="divider" />
-                <div className="section-label">Y Axis Left (Bars)</div>
+                <div className="section-label">
+                  Y Axis Left (Bars)
+                  {(localConfig.bar1Measure || localConfig.bar2Measure) && (
+                    <FieldBadge fieldName={[localConfig.bar1Measure, localConfig.bar2Measure].filter(Boolean).map(cleanFieldName).join(' / ')} />
+                  )}
+                </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.yAxisLeftShow}
                     onChange={(e) => updateConfig('yAxisLeftShow', e.target.checked)} />
@@ -877,7 +933,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 )}
 
                 <div className="divider" />
-                <div className="section-label">Y Axis Right (Line)</div>
+                <div className="section-label">
+                  Y Axis Right (Line)
+                  <FieldBadge fieldName={localConfig.lineMeasure} />
+                </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.yAxisRightShow}
                     onChange={(e) => updateConfig('yAxisRightShow', e.target.checked)} />
@@ -1111,7 +1170,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                   <p>Independent data labels for each series</p>
                 </div>
 
-                <div className="section-label">Bar 1 Labels</div>
+                <div className="section-label">
+                  Bar 1 Labels
+                  <FieldBadge fieldName={localConfig.bar1Measure} />
+                </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.bar1LabelsShow}
                     onChange={(e) => updateConfig('bar1LabelsShow', e.target.checked)} />
@@ -1149,7 +1211,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 )}
 
                 <div className="divider" />
-                <div className="section-label">Bar 2 Labels</div>
+                <div className="section-label">
+                  Bar 2 Labels
+                  <FieldBadge fieldName={localConfig.bar2Measure} />
+                </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.bar2LabelsShow}
                     onChange={(e) => updateConfig('bar2LabelsShow', e.target.checked)} />
@@ -1187,7 +1252,10 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 )}
 
                 <div className="divider" />
-                <div className="section-label">Line Labels</div>
+                <div className="section-label">
+                  Line Labels
+                  <FieldBadge fieldName={localConfig.lineMeasure} />
+                </div>
                 <label className="check-row">
                   <input type="checkbox" checked={localConfig.lineLabelsShow}
                     onChange={(e) => updateConfig('lineLabelsShow', e.target.checked)} />

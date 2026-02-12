@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import { Config } from '../utils/config'
 import { getFormatter, getFormatOpts } from '../utils/formatters'
+import { getDisplayName, getFieldNames } from '../utils/displayNames'
 
 function ComboChart({ data, columns, config }) {
   const svgRef = useRef(null)
@@ -401,12 +402,12 @@ function ComboChart({ data, columns, config }) {
       if (config.tooltipShow) {
         if (bar1Rects) {
           bar1Rects.on('mouseover', function(event, d) {
-            showTooltip(event, d.category, bar1Field, d.bar1)
+            showTooltip(event, d.category, 'bar1', d.bar1)
           }).on('mouseout', hideTooltip)
         }
         if (bar2Rects) {
           bar2Rects.on('mouseover', function(event, d) {
-            showTooltip(event, d.category, bar2Field, d.bar2)
+            showTooltip(event, d.category, 'bar2', d.bar2)
           }).on('mouseout', hideTooltip)
         }
       }
@@ -479,12 +480,12 @@ function ComboChart({ data, columns, config }) {
       if (config.tooltipShow) {
         if (bar1Rects) {
           bar1Rects.on('mouseover', function(event, d) {
-            showTooltip(event, d.category, bar1Field, d.bar1)
+            showTooltip(event, d.category, 'bar1', d.bar1)
           }).on('mouseout', hideTooltip)
         }
         if (bar2Rects) {
           bar2Rects.on('mouseover', function(event, d) {
-            showTooltip(event, d.category, bar2Field, d.bar2)
+            showTooltip(event, d.category, 'bar2', d.bar2)
           }).on('mouseout', hideTooltip)
         }
       }
@@ -576,7 +577,7 @@ function ComboChart({ data, columns, config }) {
         // Tooltips for points
         if (config.tooltipShow) {
           points.on('mouseover', function(event, d) {
-            showTooltip(event, d.category, lineField, d.line)
+            showTooltip(event, d.category, 'line', d.line)
           }).on('mouseout', hideTooltip)
         }
 
@@ -832,17 +833,18 @@ function ComboChart({ data, columns, config }) {
     // Legend is rendered as DOM elements below the SVG (see JSX return)
 
     // Tooltip functions
-    function showTooltip(event, category, measureName, value) {
+    function showTooltip(event, category, type, value) {
       if (!tooltipRef.current) return
 
       const tooltip = d3.select(tooltipRef.current)
+      const displayName = getDisplayName(type, fieldNames, config)
 
       let content = ''
       if (config.tooltipShowDimension) {
         content += `<strong>${category}</strong><br/>`
       }
       if (config.tooltipShowMeasureName) {
-        content += `${measureName}: `
+        content += `${displayName}: `
       }
       if (config.tooltipShowValue) {
         content += `${d3.format(',.2f')(value)}`
@@ -916,24 +918,25 @@ function ComboChart({ data, columns, config }) {
     : null
 
   // Build legend data for DOM rendering
+  const fieldNames = getFieldNames(config)
   const legendData = []
   if (config.bar1Measure) {
     legendData.push({
-      label: config.legendBar1Label || config.bar1Measure || 'Bar 1',
+      label: getDisplayName('bar1', fieldNames, config),
       color: config.bar1Color,
       type: 'bar'
     })
   }
   if (config.bar2Measure) {
     legendData.push({
-      label: config.legendBar2Label || config.bar2Measure || 'Bar 2',
+      label: getDisplayName('bar2', fieldNames, config),
       color: config.bar2Color,
       type: 'bar'
     })
   }
   if (config.lineMeasure) {
     legendData.push({
-      label: config.legendLineLabel || config.lineMeasure || 'Line',
+      label: getDisplayName('line', fieldNames, config),
       color: config.lineColor,
       type: 'line'
     })
