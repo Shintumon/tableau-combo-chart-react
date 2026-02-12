@@ -93,7 +93,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     }
     const containerStyle = {
       display: 'inline-flex', alignItems: 'stretch', border: '1px solid var(--color-border, #e2e5ea)',
-      borderRadius: '6px', overflow: 'hidden', height: '30px', flexShrink: 0
+      borderRadius: '6px', overflow: 'hidden', height: '30px', flexShrink: 0,
+      width: 'fit-content', alignSelf: 'flex-start'
     }
     const btnStyle = {
       width: '28px', minWidth: '28px', height: '100%', border: 'none', borderRadius: 0,
