@@ -130,14 +130,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     )
   }
 
-  // Reusable font controls component
+  // Reusable font controls component — compact 2-row layout
   const FontControls = ({ fontKey, label, sizeMin = 8, sizeMax = 24 }) => {
     const font = localConfig[fontKey] || {}
     return (
       <div className="font-controls-group">
         <div className="section-label">{label} Font</div>
         <div className="form-group indent">
-          <label className="form-label">Font Family</label>
           <select value={font.family || ''} onChange={(e) => updateFont(fontKey, 'family', e.target.value)}
             style={{ fontFamily: font.family || localConfig.fontFamily }}>
             <option value="">Use Global Font</option>
@@ -148,32 +147,25 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
             ))}
           </select>
         </div>
-        <div className="form-row indent">
-          <div className="form-group">
-            <label className="form-label">Size</label>
-            <NumberStepper value={font.size || 12} min={sizeMin} max={sizeMax} suffix="px"
-              onChange={(v) => updateFont(fontKey, 'size', v)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Weight</label>
-            <select value={String(font.weight || 400)} onChange={(e) => updateFont(fontKey, 'weight', parseInt(e.target.value))}>
-              <option value="300">Light</option>
-              <option value="400">Normal</option>
-              <option value="500">Medium</option>
-              <option value="600">Semi-Bold</option>
-              <option value="700">Bold</option>
-            </select>
-          </div>
-        </div>
-        <div className="inline-row indent">
-          <div className="color-item compact">
-            <label>Color</label>
-            <input type="color" value={font.color || '#666666'} onChange={(e) => updateFont(fontKey, 'color', e.target.value)} />
-          </div>
-          <label className="check-row compact">
-            <input type="checkbox" checked={font.italic || false} onChange={(e) => updateFont(fontKey, 'italic', e.target.checked)} />
-            <span>Italic</span>
-          </label>
+        <div className="font-props-row indent">
+          <NumberStepper value={font.size || 12} min={sizeMin} max={sizeMax} suffix="px"
+            onChange={(v) => updateFont(fontKey, 'size', v)} />
+          <select value={String(font.weight || 400)} onChange={(e) => updateFont(fontKey, 'weight', parseInt(e.target.value))}
+            className="font-weight-select">
+            <option value="300">Light</option>
+            <option value="400">Normal</option>
+            <option value="500">Medium</option>
+            <option value="600">Semi-Bold</option>
+            <option value="700">Bold</option>
+          </select>
+          <input type="color" value={font.color || '#666666'} className="font-color-picker"
+            onChange={(e) => updateFont(fontKey, 'color', e.target.value)} />
+          <button type="button"
+            className={`italic-toggle ${font.italic ? 'active' : ''}`}
+            onClick={() => updateFont(fontKey, 'italic', !font.italic)}
+            title="Italic">
+            I
+          </button>
         </div>
       </div>
     )
@@ -321,20 +313,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                   <p>Theme, font, animation and dashboard options</p>
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Theme</label>
-                    <select value={localConfig.theme}
-                      onChange={(e) => updateConfig('theme', e.target.value)}>
-                      <option value="light">Light</option>
-                      <option value="dark">Dark</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Chart Height</label>
-                    <NumberStepper value={localConfig.height} min={200} max={800} step={10} suffix="px"
-                      onChange={(v) => updateConfig('height', v)} />
-                  </div>
+                <div className="form-group">
+                  <label className="form-label">Theme</label>
+                  <select value={localConfig.theme}
+                    onChange={(e) => updateConfig('theme', e.target.value)}>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -704,11 +689,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('xAxisTitle', e.target.value)} />
                       </div>
                     )}
-                    <div className="form-group indent">
-                      <label className="form-label">Label Rotation</label>
-                      <NumberStepper value={localConfig.xAxisRotation} min={-90} max={90} step={5} suffix="°"
-                        onChange={(v) => updateConfig('xAxisRotation', v)} />
-                    </div>
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.xAxisShowLabels}
@@ -725,6 +705,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('xAxisShowAxisLine', e.target.checked)} />
                         <span>Axis Line</span>
                       </label>
+                    </div>
+                    <div className="form-group indent">
+                      <label className="form-label">Label Rotation</label>
+                      <NumberStepper value={localConfig.xAxisRotation} min={-90} max={90} step={5} suffix="°"
+                        onChange={(v) => updateConfig('xAxisRotation', v)} />
                     </div>
                     <div className="form-row indent">
                       <div className="form-group">
@@ -759,18 +744,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('xAxisLineColor', e.target.value)} />
                       </div>
                     </div>
-                    <div className="form-row indent">
-                      <div className="form-group">
-                        <label className="form-label">Label Offset X</label>
-                        <NumberStepper value={localConfig.xAxisLabelOffsetX} min={-20} max={20} suffix="px"
-                          onChange={(v) => updateConfig('xAxisLabelOffsetX', v)} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Label Offset Y</label>
-                        <NumberStepper value={localConfig.xAxisLabelOffsetY} min={-20} max={30} suffix="px"
-                          onChange={(v) => updateConfig('xAxisLabelOffsetY', v)} />
-                      </div>
-                    </div>
                     <FontControls fontKey="xAxisFont" label="X Axis" />
                   </>
                 )}
@@ -795,23 +768,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisLeftTitle', e.target.value)} />
                       </div>
                     )}
-                    <div className="form-row indent">
-                      <div className="form-group">
-                        <label className="form-label">Min</label>
-                        <input type="number" value={localConfig.yAxisLeftMin || ''} placeholder="Auto"
-                          onChange={(e) => updateConfig('yAxisLeftMin', e.target.value ? parseFloat(e.target.value) : null)} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Max</label>
-                        <input type="number" value={localConfig.yAxisLeftMax || ''} placeholder="Auto"
-                          onChange={(e) => updateConfig('yAxisLeftMax', e.target.value ? parseFloat(e.target.value) : null)} />
-                      </div>
-                    </div>
-                    <label className="check-row indent">
-                      <input type="checkbox" checked={localConfig.yAxisLeftIncludeZero}
-                        onChange={(e) => updateConfig('yAxisLeftIncludeZero', e.target.checked)} />
-                      <span>Include Zero</span>
-                    </label>
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.yAxisLeftShowLabels}
@@ -829,6 +785,23 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         <span>Axis Line</span>
                       </label>
                     </div>
+                    <div className="form-row indent">
+                      <div className="form-group">
+                        <label className="form-label">Min</label>
+                        <input type="number" value={localConfig.yAxisLeftMin || ''} placeholder="Auto"
+                          onChange={(e) => updateConfig('yAxisLeftMin', e.target.value ? parseFloat(e.target.value) : null)} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Max</label>
+                        <input type="number" value={localConfig.yAxisLeftMax || ''} placeholder="Auto"
+                          onChange={(e) => updateConfig('yAxisLeftMax', e.target.value ? parseFloat(e.target.value) : null)} />
+                      </div>
+                    </div>
+                    <label className="check-row indent">
+                      <input type="checkbox" checked={localConfig.yAxisLeftIncludeZero}
+                        onChange={(e) => updateConfig('yAxisLeftIncludeZero', e.target.checked)} />
+                      <span>Include Zero</span>
+                    </label>
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Label Format</label>
@@ -868,18 +841,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisLeftLineColor', e.target.value)} />
                       </div>
                     </div>
-                    <div className="form-row indent">
-                      <div className="form-group">
-                        <label className="form-label">Label Offset X</label>
-                        <NumberStepper value={localConfig.yAxisLeftLabelOffsetX} min={-20} max={20} suffix="px"
-                          onChange={(v) => updateConfig('yAxisLeftLabelOffsetX', v)} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Label Offset Y</label>
-                        <NumberStepper value={localConfig.yAxisLeftLabelOffsetY} min={-20} max={20} suffix="px"
-                          onChange={(v) => updateConfig('yAxisLeftLabelOffsetY', v)} />
-                      </div>
-                    </div>
                     <FontControls fontKey="yAxisLeftFont" label="Y Left Axis" />
                   </>
                 )}
@@ -904,23 +865,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisRightTitle', e.target.value)} />
                       </div>
                     )}
-                    <div className="form-row indent">
-                      <div className="form-group">
-                        <label className="form-label">Min</label>
-                        <input type="number" value={localConfig.yAxisRightMin || ''} placeholder="Auto"
-                          onChange={(e) => updateConfig('yAxisRightMin', e.target.value ? parseFloat(e.target.value) : null)} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Max</label>
-                        <input type="number" value={localConfig.yAxisRightMax || ''} placeholder="Auto"
-                          onChange={(e) => updateConfig('yAxisRightMax', e.target.value ? parseFloat(e.target.value) : null)} />
-                      </div>
-                    </div>
-                    <label className="check-row indent">
-                      <input type="checkbox" checked={localConfig.yAxisRightIncludeZero}
-                        onChange={(e) => updateConfig('yAxisRightIncludeZero', e.target.checked)} />
-                      <span>Include Zero</span>
-                    </label>
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.yAxisRightShowLabels}
@@ -938,6 +882,23 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         <span>Axis Line</span>
                       </label>
                     </div>
+                    <div className="form-row indent">
+                      <div className="form-group">
+                        <label className="form-label">Min</label>
+                        <input type="number" value={localConfig.yAxisRightMin || ''} placeholder="Auto"
+                          onChange={(e) => updateConfig('yAxisRightMin', e.target.value ? parseFloat(e.target.value) : null)} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Max</label>
+                        <input type="number" value={localConfig.yAxisRightMax || ''} placeholder="Auto"
+                          onChange={(e) => updateConfig('yAxisRightMax', e.target.value ? parseFloat(e.target.value) : null)} />
+                      </div>
+                    </div>
+                    <label className="check-row indent">
+                      <input type="checkbox" checked={localConfig.yAxisRightIncludeZero}
+                        onChange={(e) => updateConfig('yAxisRightIncludeZero', e.target.checked)} />
+                      <span>Include Zero</span>
+                    </label>
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Label Format</label>
@@ -975,18 +936,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         <label>Line Color</label>
                         <input type="color" value={localConfig.yAxisRightLineColor}
                           onChange={(e) => updateConfig('yAxisRightLineColor', e.target.value)} />
-                      </div>
-                    </div>
-                    <div className="form-row indent">
-                      <div className="form-group">
-                        <label className="form-label">Label Offset X</label>
-                        <NumberStepper value={localConfig.yAxisRightLabelOffsetX} min={-20} max={20} suffix="px"
-                          onChange={(v) => updateConfig('yAxisRightLabelOffsetX', v)} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Label Offset Y</label>
-                        <NumberStepper value={localConfig.yAxisRightLabelOffsetY} min={-20} max={20} suffix="px"
-                          onChange={(v) => updateConfig('yAxisRightLabelOffsetY', v)} />
                       </div>
                     </div>
                     <FontControls fontKey="yAxisRightFont" label="Y Right Axis" />
