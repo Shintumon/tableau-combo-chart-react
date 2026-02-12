@@ -688,6 +688,10 @@ select {
   flex-wrap: wrap;
 }
 
+.font-props-row > * {
+  align-self: center !important;
+}
+
 .font-weight-select {
   width: auto !important;
   min-width: 90px;

@@ -690,6 +690,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('xAxisTitle', e.target.value)} />
                       </div>
                     )}
+                    <FontControls fontKey="xAxisFont" label="X Axis" />
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.xAxisShowLabels}
@@ -745,7 +746,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('xAxisLineColor', e.target.value)} />
                       </div>
                     </div>
-                    <FontControls fontKey="xAxisFont" label="X Axis" />
                   </>
                 )}
 
@@ -769,6 +769,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisLeftTitle', e.target.value)} />
                       </div>
                     )}
+                    <FontControls fontKey="yAxisLeftFont" label="Y Left Axis" />
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.yAxisLeftShowLabels}
@@ -842,7 +843,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisLeftLineColor', e.target.value)} />
                       </div>
                     </div>
-                    <FontControls fontKey="yAxisLeftFont" label="Y Left Axis" />
                   </>
                 )}
 
@@ -866,6 +866,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisRightTitle', e.target.value)} />
                       </div>
                     )}
+                    <FontControls fontKey="yAxisRightFont" label="Y Right Axis" />
                     <div className="check-group indent">
                       <label className="check-row">
                         <input type="checkbox" checked={localConfig.yAxisRightShowLabels}
@@ -939,7 +940,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisRightLineColor', e.target.value)} />
                       </div>
                     </div>
-                    <FontControls fontKey="yAxisRightFont" label="Y Right Axis" />
                   </>
                 )}
               </div>
@@ -1081,6 +1081,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         )}
                       </div>
                     )}
+                    <FontControls fontKey="bar1LabelFont" label="Bar 1 Label" />
+                    <FontControls fontKey="bar2LabelFont" label="Bar 2 Label" />
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Offset X</label>
@@ -1093,8 +1095,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(v) => updateConfig('barLabelsOffsetY', v)} />
                       </div>
                     </div>
-                    <FontControls fontKey="bar1LabelFont" label="Bar 1 Label" />
-                    <FontControls fontKey="bar2LabelFont" label="Bar 2 Label" />
                   </>
                 )}
 
@@ -1147,6 +1147,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         )}
                       </div>
                     )}
+                    <FontControls fontKey="lineLabelFont" label="Line Label" />
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Offset X</label>
@@ -1159,7 +1160,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(v) => updateConfig('lineLabelsOffsetY', v)} />
                       </div>
                     </div>
-                    <FontControls fontKey="lineLabelFont" label="Line Label" />
                   </>
                 )}
               </div>
