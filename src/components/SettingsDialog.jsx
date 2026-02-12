@@ -685,10 +685,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       <span>Show Title</span>
                     </label>
                     {localConfig.xAxisShowTitle && (
-                      <div className="form-group indent">
-                        <input type="text" value={localConfig.xAxisTitle} placeholder="Auto"
-                          onChange={(e) => updateConfig('xAxisTitle', e.target.value)} />
-                      </div>
+                      <>
+                        <div className="form-group indent">
+                          <input type="text" value={localConfig.xAxisTitle} placeholder="Auto"
+                            onChange={(e) => updateConfig('xAxisTitle', e.target.value)} />
+                        </div>
+                        <FontControls fontKey="xAxisFont" label="X Axis" />
+                      </>
                     )}
                     <div className="check-group indent">
                       <label className="check-row">
@@ -745,7 +748,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('xAxisLineColor', e.target.value)} />
                       </div>
                     </div>
-                    <FontControls fontKey="xAxisFont" label="X Axis" />
                   </>
                 )}
 
@@ -764,10 +766,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       <span>Show Title</span>
                     </label>
                     {localConfig.yAxisLeftShowTitle && (
-                      <div className="form-group indent">
-                        <input type="text" value={localConfig.yAxisLeftTitle} placeholder="Auto"
-                          onChange={(e) => updateConfig('yAxisLeftTitle', e.target.value)} />
-                      </div>
+                      <>
+                        <div className="form-group indent">
+                          <input type="text" value={localConfig.yAxisLeftTitle} placeholder="Auto"
+                            onChange={(e) => updateConfig('yAxisLeftTitle', e.target.value)} />
+                        </div>
+                        <FontControls fontKey="yAxisLeftFont" label="Y Left Axis" />
+                      </>
                     )}
                     <div className="check-group indent">
                       <label className="check-row">
@@ -842,7 +847,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisLeftLineColor', e.target.value)} />
                       </div>
                     </div>
-                    <FontControls fontKey="yAxisLeftFont" label="Y Left Axis" />
                   </>
                 )}
 
@@ -861,10 +865,13 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                       <span>Show Title</span>
                     </label>
                     {localConfig.yAxisRightShowTitle && (
-                      <div className="form-group indent">
-                        <input type="text" value={localConfig.yAxisRightTitle} placeholder="Auto"
-                          onChange={(e) => updateConfig('yAxisRightTitle', e.target.value)} />
-                      </div>
+                      <>
+                        <div className="form-group indent">
+                          <input type="text" value={localConfig.yAxisRightTitle} placeholder="Auto"
+                            onChange={(e) => updateConfig('yAxisRightTitle', e.target.value)} />
+                        </div>
+                        <FontControls fontKey="yAxisRightFont" label="Y Right Axis" />
+                      </>
                     )}
                     <div className="check-group indent">
                       <label className="check-row">
@@ -939,7 +946,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           onChange={(e) => updateConfig('yAxisRightLineColor', e.target.value)} />
                       </div>
                     </div>
-                    <FontControls fontKey="yAxisRightFont" label="Y Right Axis" />
                   </>
                 )}
               </div>
