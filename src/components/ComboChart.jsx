@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import { Config } from '../utils/config'
+import { getFormatter, getFormatOpts } from '../utils/formatters'
 
 function ComboChart({ data, columns, config }) {
   const svgRef = useRef(null)
@@ -97,24 +98,6 @@ function ComboChart({ data, columns, config }) {
     const getDisplayName = (fieldName) => {
       if (!fieldName) return ''
       return fieldName.replace(/^(SUM|AVG|MIN|MAX|COUNT|AGG|MEDIAN|STDEV|VAR)\((.+)\)$/i, '$2').trim()
-    }
-
-    // Number formatter for axis labels and data labels
-    const getFormatter = (format, decimals = 0, currencySymbol = '$') => {
-      if (!format || format === 'auto') return null
-      switch (format) {
-        case 'number': return d3.format(`,.${decimals}f`)
-        case 'currency': return v => `${currencySymbol}${d3.format(`,.${decimals}f`)(v)}`
-        case 'percent': return d3.format(`.${decimals}%`)
-        case 'compact': return v => {
-          const abs = Math.abs(v)
-          if (abs >= 1e9) return d3.format(`.${decimals}f`)(v / 1e9) + 'B'
-          if (abs >= 1e6) return d3.format(`.${decimals}f`)(v / 1e6) + 'M'
-          if (abs >= 1e3) return d3.format(`.${decimals}f`)(v / 1e3) + 'K'
-          return d3.format(`,.${decimals}f`)(v)
-        }
-        default: return null
-      }
     }
 
     // Extract field names from config (encoding-based mappings only, no fallbacks)
@@ -366,7 +349,7 @@ function ComboChart({ data, columns, config }) {
       if (config.barLabelsShow) {
         const b1Font = resolveFont('bar1LabelFont')
         const b2Font = resolveFont('bar2LabelFont')
-        const barLabelFmt = getFormatter(config.barLabelsFormat, config.barLabelsDecimals, config.barLabelsCurrencySymbol)
+        const barLabelFmt = getFormatter(getFormatOpts(config, 'barLabels'))
 
         if (hasBar1) {
           barGroup.append('text')
@@ -598,7 +581,7 @@ function ComboChart({ data, columns, config }) {
 
         // Line labels
         if (config.lineLabelsShow) {
-          const lineLabelFmt = getFormatter(config.lineLabelsFormat, config.lineLabelsDecimals, config.lineLabelsCurrencySymbol)
+          const lineLabelFmt = getFormatter(getFormatOpts(config, 'lineLabels'))
           const llFont = resolveFont('lineLabelFont')
           pointsGroup.selectAll('.line-label')
             .data(chartData)
@@ -702,7 +685,7 @@ function ComboChart({ data, columns, config }) {
       if (!config.yAxisLeftShowLabels) {
         yAxisLeftGenerator.tickFormat('')
       } else {
-        const leftFmt = getFormatter(config.yAxisLeftFormat, config.yAxisLeftDecimals, config.yAxisLeftCurrencySymbol)
+        const leftFmt = getFormatter(getFormatOpts(config, 'yAxisLeft'))
         if (leftFmt) yAxisLeftGenerator.tickFormat(leftFmt)
       }
       if (!config.yAxisLeftShowTickMarks) {
@@ -761,7 +744,7 @@ function ComboChart({ data, columns, config }) {
       if (!config.yAxisRightShowLabels) {
         yAxisRightGenerator.tickFormat('')
       } else {
-        const rightFmt = getFormatter(config.yAxisRightFormat, config.yAxisRightDecimals, config.yAxisRightCurrencySymbol)
+        const rightFmt = getFormatter(getFormatOpts(config, 'yAxisRight'))
         if (rightFmt) yAxisRightGenerator.tickFormat(rightFmt)
       }
       if (!config.yAxisRightShowTickMarks) {

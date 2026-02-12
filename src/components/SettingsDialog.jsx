@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Config } from '../utils/config'
+import FormatControls from './FormatControls'
 
 function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDialog = false, debugLogs: externalDebugLogs, onClearDebugLogs, workbookFont }) {
   const [localConfig, setLocalConfig] = useState(() => {
@@ -808,33 +809,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         onChange={(e) => updateConfig('yAxisLeftIncludeZero', e.target.checked)} />
                       <span>Include Zero</span>
                     </label>
-                    <div className="form-row indent">
-                      <div className="form-group">
-                        <label className="form-label">Label Format</label>
-                        <select value={localConfig.yAxisLeftFormat}
-                          onChange={(e) => updateConfig('yAxisLeftFormat', e.target.value)}>
-                          <option value="auto">Auto</option>
-                          <option value="number">Number</option>
-                          <option value="currency">Currency</option>
-                          <option value="percent">Percent</option>
-                          <option value="compact">Compact (K/M/B)</option>
-                        </select>
-                      </div>
-                      {localConfig.yAxisLeftFormat !== 'auto' && (
-                        <div className="form-group">
-                          <label className="form-label">Decimals</label>
-                          <NumberStepper value={localConfig.yAxisLeftDecimals} min={0} max={4}
-                            onChange={(v) => updateConfig('yAxisLeftDecimals', v)} />
-                        </div>
-                      )}
-                    </div>
-                    {localConfig.yAxisLeftFormat === 'currency' && (
-                      <div className="form-group indent">
-                        <label className="form-label">Currency Symbol</label>
-                        <input type="text" value={localConfig.yAxisLeftCurrencySymbol} style={{ width: 60 }}
-                          onChange={(e) => updateConfig('yAxisLeftCurrencySymbol', e.target.value)} />
-                      </div>
-                    )}
+                    <FormatControls prefix="yAxisLeft" localConfig={localConfig}
+                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <div className="inline-row indent">
                       <div className="color-item compact">
                         <label>Tick Color</label>
@@ -907,33 +883,8 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         onChange={(e) => updateConfig('yAxisRightIncludeZero', e.target.checked)} />
                       <span>Include Zero</span>
                     </label>
-                    <div className="form-row indent">
-                      <div className="form-group">
-                        <label className="form-label">Label Format</label>
-                        <select value={localConfig.yAxisRightFormat}
-                          onChange={(e) => updateConfig('yAxisRightFormat', e.target.value)}>
-                          <option value="auto">Auto</option>
-                          <option value="number">Number</option>
-                          <option value="currency">Currency</option>
-                          <option value="percent">Percent</option>
-                          <option value="compact">Compact (K/M/B)</option>
-                        </select>
-                      </div>
-                      {localConfig.yAxisRightFormat !== 'auto' && (
-                        <div className="form-group">
-                          <label className="form-label">Decimals</label>
-                          <NumberStepper value={localConfig.yAxisRightDecimals} min={0} max={4}
-                            onChange={(v) => updateConfig('yAxisRightDecimals', v)} />
-                        </div>
-                      )}
-                    </div>
-                    {localConfig.yAxisRightFormat === 'currency' && (
-                      <div className="form-group indent">
-                        <label className="form-label">Currency Symbol</label>
-                        <input type="text" value={localConfig.yAxisRightCurrencySymbol} style={{ width: 60 }}
-                          onChange={(e) => updateConfig('yAxisRightCurrencySymbol', e.target.value)} />
-                      </div>
-                    )}
+                    <FormatControls prefix="yAxisRight" localConfig={localConfig}
+                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <div className="inline-row indent">
                       <div className="color-item compact">
                         <label>Tick Color</label>
@@ -1105,34 +1056,9 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           <option value="center">Center</option>
                         </select>
                       </div>
-                      <div className="form-group">
-                        <label className="form-label">Format</label>
-                        <select value={localConfig.barLabelsFormat}
-                          onChange={(e) => updateConfig('barLabelsFormat', e.target.value)}>
-                          <option value="auto">Auto</option>
-                          <option value="number">Number</option>
-                          <option value="currency">Currency</option>
-                          <option value="percent">Percent</option>
-                          <option value="compact">Compact (K/M/B)</option>
-                        </select>
-                      </div>
                     </div>
-                    {localConfig.barLabelsFormat !== 'auto' && (
-                      <div className="form-row indent">
-                        <div className="form-group">
-                          <label className="form-label">Decimals</label>
-                          <NumberStepper value={localConfig.barLabelsDecimals} min={0} max={4}
-                            onChange={(v) => updateConfig('barLabelsDecimals', v)} />
-                        </div>
-                        {localConfig.barLabelsFormat === 'currency' && (
-                          <div className="form-group">
-                            <label className="form-label">Currency Symbol</label>
-                            <input type="text" value={localConfig.barLabelsCurrencySymbol} style={{ width: 60 }}
-                              onChange={(e) => updateConfig('barLabelsCurrencySymbol', e.target.value)} />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <FormatControls prefix="barLabels" localConfig={localConfig}
+                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <FontControls fontKey="bar1LabelFont" label="Bar 1 Label" />
                     <FontControls fontKey="bar2LabelFont" label="Bar 2 Label" />
                     <div className="form-row indent">
@@ -1171,34 +1097,9 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           <option value="center">Center</option>
                         </select>
                       </div>
-                      <div className="form-group">
-                        <label className="form-label">Format</label>
-                        <select value={localConfig.lineLabelsFormat}
-                          onChange={(e) => updateConfig('lineLabelsFormat', e.target.value)}>
-                          <option value="auto">Auto</option>
-                          <option value="number">Number</option>
-                          <option value="currency">Currency</option>
-                          <option value="percent">Percent</option>
-                          <option value="compact">Compact (K/M/B)</option>
-                        </select>
-                      </div>
                     </div>
-                    {localConfig.lineLabelsFormat !== 'auto' && (
-                      <div className="form-row indent">
-                        <div className="form-group">
-                          <label className="form-label">Decimals</label>
-                          <NumberStepper value={localConfig.lineLabelsDecimals} min={0} max={4}
-                            onChange={(v) => updateConfig('lineLabelsDecimals', v)} />
-                        </div>
-                        {localConfig.lineLabelsFormat === 'currency' && (
-                          <div className="form-group">
-                            <label className="form-label">Currency Symbol</label>
-                            <input type="text" value={localConfig.lineLabelsCurrencySymbol} style={{ width: 60 }}
-                              onChange={(e) => updateConfig('lineLabelsCurrencySymbol', e.target.value)} />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <FormatControls prefix="lineLabels" localConfig={localConfig}
+                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <FontControls fontKey="lineLabelFont" label="Line Label" />
                     <div className="form-row indent">
                       <div className="form-group">
