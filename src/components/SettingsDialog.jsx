@@ -1192,6 +1192,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     onChange={(e) => updateConfig('bar1LabelsShow', e.target.checked)} />
                   <span>Show Bar 1 Labels</span>
                 </label>
+                <FormatControls prefix="bar1Labels" localConfig={localConfig}
+                  updateConfig={updateConfig} NumberStepper={NumberStepper} />
+                <p className="help-text indent" style={{ marginTop: -4, marginBottom: 8 }}>
+                  Format applies to Bar 1 labels and tooltips
+                </p>
                 {localConfig.bar1LabelsShow && (
                   <>
                     <div className="form-row indent">
@@ -1205,8 +1210,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         </select>
                       </div>
                     </div>
-                    <FormatControls prefix="bar1Labels" localConfig={localConfig}
-                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <FontControls fontKey="bar1LabelFont" label="Bar 1 Label" />
                     <div className="form-row indent">
                       <div className="form-group">
@@ -1233,6 +1236,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     onChange={(e) => updateConfig('bar2LabelsShow', e.target.checked)} />
                   <span>Show Bar 2 Labels</span>
                 </label>
+                <FormatControls prefix="bar2Labels" localConfig={localConfig}
+                  updateConfig={updateConfig} NumberStepper={NumberStepper} />
+                <p className="help-text indent" style={{ marginTop: -4, marginBottom: 8 }}>
+                  Format applies to Bar 2 labels and tooltips
+                </p>
                 {localConfig.bar2LabelsShow && (
                   <>
                     <div className="form-row indent">
@@ -1246,8 +1254,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         </select>
                       </div>
                     </div>
-                    <FormatControls prefix="bar2Labels" localConfig={localConfig}
-                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <FontControls fontKey="bar2LabelFont" label="Bar 2 Label" />
                     <div className="form-row indent">
                       <div className="form-group">
@@ -1274,6 +1280,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     onChange={(e) => updateConfig('lineLabelsShow', e.target.checked)} />
                   <span>Show Line Labels</span>
                 </label>
+                <FormatControls prefix="lineLabels" localConfig={localConfig}
+                  updateConfig={updateConfig} NumberStepper={NumberStepper} />
+                <p className="help-text indent" style={{ marginTop: -4, marginBottom: 8 }}>
+                  Format applies to Line labels and tooltips
+                </p>
                 {localConfig.lineLabelsShow && (
                   <>
                     <div className="form-row indent">
@@ -1289,8 +1300,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                         </select>
                       </div>
                     </div>
-                    <FormatControls prefix="lineLabels" localConfig={localConfig}
-                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <FontControls fontKey="lineLabelFont" label="Line Label" />
                     <div className="form-row indent">
                       <div className="form-group">
