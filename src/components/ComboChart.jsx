@@ -832,6 +832,9 @@ function ComboChart({ data, columns, config }) {
     // Title is rendered in the DOM header (App.jsx), not in SVG
     // Legend is rendered as DOM elements below the SVG (see JSX return)
 
+    // Get field names for display (used in tooltips and legend)
+    const fieldNames = getFieldNames(config)
+
     // Tooltip functions
     function showTooltip(event, category, type, value) {
       if (!tooltipRef.current) return
@@ -864,13 +867,13 @@ function ComboChart({ data, columns, config }) {
             .replace(/\{dimension\}/g, category)
             .replace(/\{bar1_label\}/g, bar1Label)
             .replace(/\{bar1_value\}/g, bar1Formatted)
-            .replace(/\{bar1\}/g, `${bar1Label}: ${bar1Formatted}`)
+            .replace(/\{bar1\}/g, `${bar1Label} : ${bar1Formatted}`)
             .replace(/\{bar2_label\}/g, bar2Label)
             .replace(/\{bar2_value\}/g, bar2Formatted)
-            .replace(/\{bar2\}/g, `${bar2Label}: ${bar2Formatted}`)
+            .replace(/\{bar2\}/g, `${bar2Label} : ${bar2Formatted}`)
             .replace(/\{line_label\}/g, lineLabel)
             .replace(/\{line_value\}/g, lineFormatted)
-            .replace(/\{line\}/g, `${lineLabel}: ${lineFormatted}`)
+            .replace(/\{line\}/g, `${lineLabel} : ${lineFormatted}`)
             .replace(/\{measure\}/g, displayName)
             .replace(/\{value\}/g, valueFormatted)
 
@@ -961,7 +964,6 @@ function ComboChart({ data, columns, config }) {
     : null
 
   // Build legend data for DOM rendering
-  const fieldNames = getFieldNames(config)
   const legendData = []
   if (config.bar1Measure) {
     legendData.push({
