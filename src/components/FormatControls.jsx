@@ -73,6 +73,7 @@ export default function FormatControls({ prefix, localConfig, updateConfig, Numb
             <select value={get('DisplayUnits') || 'none'}
               onChange={(e) => set('DisplayUnits', e.target.value)}>
               <option value="none">None</option>
+              <option value="auto">Auto (K/M/B)</option>
               <option value="thousands">Thousands (K)</option>
               <option value="millions">Millions (M)</option>
               <option value="billions">Billions (B)</option>
@@ -90,13 +91,21 @@ export default function FormatControls({ prefix, localConfig, updateConfig, Numb
         </label>
       )}
 
-      {/* Currency Symbol */}
+      {/* Currency Symbol + Position */}
       {showCurrency && (
         <div className="form-row indent">
           <div className="form-group">
             <label className="form-label">Currency Symbol</label>
             <input type="text" value={get('CurrencySymbol') || '$'} style={{ width: 60 }}
               onChange={(e) => set('CurrencySymbol', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Position</label>
+            <select value={get('CurrencyPosition') || 'prefix'}
+              onChange={(e) => set('CurrencyPosition', e.target.value)}>
+              <option value="prefix">Before ($100)</option>
+              <option value="suffix">After (100$)</option>
+            </select>
           </div>
         </div>
       )}

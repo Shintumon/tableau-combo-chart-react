@@ -1035,42 +1035,79 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
               <div className="settings-tab">
                 <div className="tab-header">
                   <h3>Labels</h3>
-                  <p>Data labels for bars and line</p>
+                  <p>Independent data labels for each series</p>
                 </div>
 
-                <div className="section-label">Bar Labels</div>
+                <div className="section-label">Bar 1 Labels</div>
                 <label className="check-row">
-                  <input type="checkbox" checked={localConfig.barLabelsShow}
-                    onChange={(e) => updateConfig('barLabelsShow', e.target.checked)} />
-                  <span>Show Bar Labels</span>
+                  <input type="checkbox" checked={localConfig.bar1LabelsShow}
+                    onChange={(e) => updateConfig('bar1LabelsShow', e.target.checked)} />
+                  <span>Show Bar 1 Labels</span>
                 </label>
-                {localConfig.barLabelsShow && (
+                {localConfig.bar1LabelsShow && (
                   <>
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Position</label>
-                        <select value={localConfig.barLabelsPosition}
-                          onChange={(e) => updateConfig('barLabelsPosition', e.target.value)}>
+                        <select value={localConfig.bar1LabelsPosition}
+                          onChange={(e) => updateConfig('bar1LabelsPosition', e.target.value)}>
                           <option value="top">Top</option>
                           <option value="inside">Inside</option>
                           <option value="center">Center</option>
                         </select>
                       </div>
                     </div>
-                    <FormatControls prefix="barLabels" localConfig={localConfig}
+                    <FormatControls prefix="bar1Labels" localConfig={localConfig}
                       updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <FontControls fontKey="bar1LabelFont" label="Bar 1 Label" />
+                    <div className="form-row indent">
+                      <div className="form-group">
+                        <label className="form-label">Offset X</label>
+                        <NumberStepper value={localConfig.bar1LabelsOffsetX} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('bar1LabelsOffsetX', v)} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Offset Y</label>
+                        <NumberStepper value={localConfig.bar1LabelsOffsetY} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('bar1LabelsOffsetY', v)} />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="divider" />
+                <div className="section-label">Bar 2 Labels</div>
+                <label className="check-row">
+                  <input type="checkbox" checked={localConfig.bar2LabelsShow}
+                    onChange={(e) => updateConfig('bar2LabelsShow', e.target.checked)} />
+                  <span>Show Bar 2 Labels</span>
+                </label>
+                {localConfig.bar2LabelsShow && (
+                  <>
+                    <div className="form-row indent">
+                      <div className="form-group">
+                        <label className="form-label">Position</label>
+                        <select value={localConfig.bar2LabelsPosition}
+                          onChange={(e) => updateConfig('bar2LabelsPosition', e.target.value)}>
+                          <option value="top">Top</option>
+                          <option value="inside">Inside</option>
+                          <option value="center">Center</option>
+                        </select>
+                      </div>
+                    </div>
+                    <FormatControls prefix="bar2Labels" localConfig={localConfig}
+                      updateConfig={updateConfig} NumberStepper={NumberStepper} />
                     <FontControls fontKey="bar2LabelFont" label="Bar 2 Label" />
                     <div className="form-row indent">
                       <div className="form-group">
                         <label className="form-label">Offset X</label>
-                        <NumberStepper value={localConfig.barLabelsOffsetX} min={-20} max={20} suffix="px"
-                          onChange={(v) => updateConfig('barLabelsOffsetX', v)} />
+                        <NumberStepper value={localConfig.bar2LabelsOffsetX} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('bar2LabelsOffsetX', v)} />
                       </div>
                       <div className="form-group">
                         <label className="form-label">Offset Y</label>
-                        <NumberStepper value={localConfig.barLabelsOffsetY} min={-20} max={20} suffix="px"
-                          onChange={(v) => updateConfig('barLabelsOffsetY', v)} />
+                        <NumberStepper value={localConfig.bar2LabelsOffsetY} min={-20} max={20} suffix="px"
+                          onChange={(v) => updateConfig('bar2LabelsOffsetY', v)} />
                       </div>
                     </div>
                   </>

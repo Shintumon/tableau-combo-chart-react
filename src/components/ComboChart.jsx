@@ -345,55 +345,56 @@ function ComboChart({ data, columns, config }) {
           .attr('height', d => chartHeight - yLeft(d.bar2))
       }
 
-      // Bar labels
-      if (config.barLabelsShow) {
+      // Bar 1 labels (independent config)
+      if (config.bar1LabelsShow && hasBar1) {
         const b1Font = resolveFont('bar1LabelFont')
+        const bar1LabelFmt = getFormatter(getFormatOpts(config, 'bar1Labels'))
+        barGroup.append('text')
+          .attr('class', 'bar1-label')
+          .attr('x', x1('bar1') + x1.bandwidth() / 2 + (config.bar1LabelsOffsetX || 0))
+          .attr('y', d => {
+            const baseY = config.bar1LabelsPosition === 'top' ? yLeft(d.bar1) - 5
+              : config.bar1LabelsPosition === 'center' ? yLeft(d.bar1) + (chartHeight - yLeft(d.bar1)) / 2
+              : yLeft(d.bar1) + 15
+            return baseY + (config.bar1LabelsOffsetY || 0)
+          })
+          .attr('text-anchor', 'middle')
+          .attr('font-size', b1Font.size + 'px')
+          .style('font-family', b1Font.family)
+          .style('font-weight', b1Font.weight)
+          .style('font-style', b1Font.italic ? 'italic' : 'normal')
+          .attr('fill', b1Font.color)
+          .text(d => bar1LabelFmt ? bar1LabelFmt(d.bar1) : d3.format(',')(d.bar1))
+          .style('opacity', 0)
+          .transition()
+          .duration(config.animationEnabled ? config.animationDuration : 0)
+          .style('opacity', 1)
+      }
+
+      // Bar 2 labels (independent config)
+      if (config.bar2LabelsShow && hasBar2) {
         const b2Font = resolveFont('bar2LabelFont')
-        const barLabelFmt = getFormatter(getFormatOpts(config, 'barLabels'))
-
-        if (hasBar1) {
-          barGroup.append('text')
-            .attr('class', 'bar1-label')
-            .attr('x', x1('bar1') + x1.bandwidth() / 2)
-            .attr('y', d => {
-              if (config.barLabelsPosition === 'top') return yLeft(d.bar1) - 5
-              if (config.barLabelsPosition === 'center') return yLeft(d.bar1) + (chartHeight - yLeft(d.bar1)) / 2
-              return yLeft(d.bar1) + 15
-            })
-            .attr('text-anchor', 'middle')
-            .attr('font-size', b1Font.size + 'px')
-            .style('font-family', b1Font.family)
-            .style('font-weight', b1Font.weight)
-            .style('font-style', b1Font.italic ? 'italic' : 'normal')
-            .attr('fill', b1Font.color)
-            .text(d => barLabelFmt ? barLabelFmt(d.bar1) : d3.format(',')(d.bar1))
-            .style('opacity', 0)
-            .transition()
-            .duration(config.animationEnabled ? config.animationDuration : 0)
-            .style('opacity', 1)
-        }
-
-        if (hasBar2) {
-          barGroup.append('text')
-            .attr('class', 'bar2-label')
-            .attr('x', x1('bar2') + x1.bandwidth() / 2)
-            .attr('y', d => {
-              if (config.barLabelsPosition === 'top') return yLeft(d.bar2) - 5
-              if (config.barLabelsPosition === 'center') return yLeft(d.bar2) + (chartHeight - yLeft(d.bar2)) / 2
-              return yLeft(d.bar2) + 15
-            })
-            .attr('text-anchor', 'middle')
-            .attr('font-size', b2Font.size + 'px')
-            .style('font-family', b2Font.family)
-            .style('font-weight', b2Font.weight)
-            .style('font-style', b2Font.italic ? 'italic' : 'normal')
-            .attr('fill', b2Font.color)
-            .text(d => barLabelFmt ? barLabelFmt(d.bar2) : d3.format(',')(d.bar2))
-            .style('opacity', 0)
-            .transition()
-            .duration(config.animationEnabled ? config.animationDuration : 0)
-            .style('opacity', 1)
-        }
+        const bar2LabelFmt = getFormatter(getFormatOpts(config, 'bar2Labels'))
+        barGroup.append('text')
+          .attr('class', 'bar2-label')
+          .attr('x', x1('bar2') + x1.bandwidth() / 2 + (config.bar2LabelsOffsetX || 0))
+          .attr('y', d => {
+            const baseY = config.bar2LabelsPosition === 'top' ? yLeft(d.bar2) - 5
+              : config.bar2LabelsPosition === 'center' ? yLeft(d.bar2) + (chartHeight - yLeft(d.bar2)) / 2
+              : yLeft(d.bar2) + 15
+            return baseY + (config.bar2LabelsOffsetY || 0)
+          })
+          .attr('text-anchor', 'middle')
+          .attr('font-size', b2Font.size + 'px')
+          .style('font-family', b2Font.family)
+          .style('font-weight', b2Font.weight)
+          .style('font-style', b2Font.italic ? 'italic' : 'normal')
+          .attr('fill', b2Font.color)
+          .text(d => bar2LabelFmt ? bar2LabelFmt(d.bar2) : d3.format(',')(d.bar2))
+          .style('opacity', 0)
+          .transition()
+          .duration(config.animationEnabled ? config.animationDuration : 0)
+          .style('opacity', 1)
       }
 
       // Tooltips for bars
@@ -587,11 +588,12 @@ function ComboChart({ data, columns, config }) {
             .data(chartData)
             .enter().append('text')
             .attr('class', 'line-label')
-            .attr('x', d => x0(d.category) + x0.bandwidth() / 2)
+            .attr('x', d => x0(d.category) + x0.bandwidth() / 2 + (config.lineLabelsOffsetX || 0))
             .attr('y', d => {
-              if (config.lineLabelsPosition === 'top') return yRight(d.line) - 10
-              if (config.lineLabelsPosition === 'bottom') return yRight(d.line) + 15
-              return yRight(d.line) + 5
+              const baseY = config.lineLabelsPosition === 'top' ? yRight(d.line) - 10
+                : config.lineLabelsPosition === 'bottom' ? yRight(d.line) + 15
+                : yRight(d.line) + 5
+              return baseY + (config.lineLabelsOffsetY || 0)
             })
             .attr('text-anchor', 'middle')
             .attr('font-size', llFont.size + 'px')

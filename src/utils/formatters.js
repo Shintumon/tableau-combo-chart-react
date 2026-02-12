@@ -7,13 +7,14 @@ import * as d3 from 'd3'
 /**
  * Extract format options from config for a given prefix
  * @param {Object} config - Full config object
- * @param {string} prefix - Config key prefix (e.g. 'barLabels', 'yAxisLeft')
+ * @param {string} prefix - Config key prefix (e.g. 'bar1Labels', 'lineLabels', 'yAxisLeft')
  * @returns {Object} Format options object
  */
 export const getFormatOpts = (config, prefix) => ({
   format: config[prefix + 'Format'] || 'auto',
   decimals: config[prefix + 'Decimals'] ?? 0,
   currencySymbol: config[prefix + 'CurrencySymbol'] || '$',
+  currencyPosition: config[prefix + 'CurrencyPosition'] || 'prefix',
   negativeStyle: config[prefix + 'NegativeStyle'] || 'minus',
   displayUnits: config[prefix + 'DisplayUnits'] || 'none',
   prefix: config[prefix + 'Prefix'] || '',
@@ -111,10 +112,10 @@ const UNIT_CONFIG = {
 export const getFormatter = (opts) => {
   const {
     format, decimals = 0, currencySymbol = '$',
-    negativeStyle = 'minus', displayUnits = 'none',
-    prefix = '', suffix = '', thousandsSep = true,
-    customFormat = '', dateFormat = 'shortDate',
-    customDateFormat = ''
+    currencyPosition = 'prefix', negativeStyle = 'minus',
+    displayUnits = 'none', prefix = '', suffix = '',
+    thousandsSep = true, customFormat = '',
+    dateFormat = 'shortDate', customDateFormat = ''
   } = opts
 
   if (!format || format === 'auto') return null
@@ -167,18 +168,33 @@ export const getFormatter = (opts) => {
       return null
   }
 
-  const unit = UNIT_CONFIG[displayUnits] || UNIT_CONFIG.none
+  // Auto display units: dynamically pick K/M/B based on magnitude
+  const isAutoUnits = displayUnits === 'auto'
+  const fixedUnit = UNIT_CONFIG[displayUnits] || UNIT_CONFIG.none
+
+  const getUnit = (v) => {
+    if (!isAutoUnits) return fixedUnit
+    const abs = Math.abs(v)
+    if (abs >= 1e9) return UNIT_CONFIG.billions
+    if (abs >= 1e6) return UNIT_CONFIG.millions
+    if (abs >= 1e3) return UNIT_CONFIG.thousands
+    return UNIT_CONFIG.none
+  }
 
   return (v) => {
+    const unit = getUnit(v)
     const scaled = format === 'percent' ? v : v / unit.divisor
     const formatted = coreFormat(Math.abs(scaled))
-    const currPre = format === 'currency' ? currencySymbol : ''
     const unitSuf = format === 'percent' ? '' : unit.unitSuffix
     const isNeg = v < 0
 
+    // Currency symbol placement: before or after the number
+    const currBefore = format === 'currency' && currencyPosition === 'prefix' ? currencySymbol : ''
+    const currAfter = format === 'currency' && currencyPosition === 'suffix' ? currencySymbol : ''
+
     if (isNeg && negativeStyle === 'parens') {
-      return `(${prefix}${currPre}${formatted}${unitSuf}${suffix})`
+      return `(${prefix}${currBefore}${formatted}${unitSuf}${currAfter}${suffix})`
     }
-    return `${isNeg ? '-' : ''}${prefix}${currPre}${formatted}${unitSuf}${suffix}`
+    return `${isNeg ? '-' : ''}${prefix}${currBefore}${formatted}${unitSuf}${currAfter}${suffix}`
   }
 }
