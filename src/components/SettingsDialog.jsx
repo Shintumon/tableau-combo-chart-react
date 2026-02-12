@@ -1462,6 +1462,106 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     ) : (
                       <div className="indent" style={{ marginTop: 12 }}>
                         <div style={{ marginBottom: 8 }}>
+                          <label className="form-label" style={{ marginBottom: 6, display: 'block' }}>Format Text:</label>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const selected = text.substring(start, end)
+                                if (selected) {
+                                  const wrapped = `<b>${selected}</b>`
+                                  textarea.value = text.substring(0, start) + wrapped + text.substring(end)
+                                  textarea.selectionStart = start
+                                  textarea.selectionEnd = start + wrapped.length
+                                  textarea.focus()
+                                  updateConfig('tooltipTemplate', textarea.value)
+                                }
+                              }}
+                              title="Bold">
+                              <strong>B</strong>
+                            </button>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const selected = text.substring(start, end)
+                                if (selected) {
+                                  const wrapped = `<i>${selected}</i>`
+                                  textarea.value = text.substring(0, start) + wrapped + text.substring(end)
+                                  textarea.selectionStart = start
+                                  textarea.selectionEnd = start + wrapped.length
+                                  textarea.focus()
+                                  updateConfig('tooltipTemplate', textarea.value)
+                                }
+                              }}
+                              title="Italic">
+                              <em>I</em>
+                            </button>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const selected = text.substring(start, end)
+                                if (selected) {
+                                  const wrapped = `<u>${selected}</u>`
+                                  textarea.value = text.substring(0, start) + wrapped + text.substring(end)
+                                  textarea.selectionStart = start
+                                  textarea.selectionEnd = start + wrapped.length
+                                  textarea.focus()
+                                  updateConfig('tooltipTemplate', textarea.value)
+                                }
+                              }}
+                              title="Underline">
+                              <u>U</u>
+                            </button>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const selected = text.substring(start, end)
+                                if (selected) {
+                                  const wrapped = `<strong>${selected}</strong>`
+                                  textarea.value = text.substring(0, start) + wrapped + text.substring(end)
+                                  textarea.selectionStart = start
+                                  textarea.selectionEnd = start + wrapped.length
+                                  textarea.focus()
+                                  updateConfig('tooltipTemplate', textarea.value)
+                                }
+                              }}
+                              title="Strong (Bold)">
+                              Strong
+                            </button>
+                            <button type="button" className="btn-secondary btn-sm"
+                              onClick={() => {
+                                const textarea = document.getElementById('tooltip-template')
+                                const start = textarea.selectionStart
+                                const end = textarea.selectionEnd
+                                const text = textarea.value
+                                const selected = text.substring(start, end)
+                                if (selected) {
+                                  const wrapped = `<small>${selected}</small>`
+                                  textarea.value = text.substring(0, start) + wrapped + text.substring(end)
+                                  textarea.selectionStart = start
+                                  textarea.selectionEnd = start + wrapped.length
+                                  textarea.focus()
+                                  updateConfig('tooltipTemplate', textarea.value)
+                                }
+                              }}
+                              title="Small text">
+                              Small
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
                           <label className="form-label" style={{ marginBottom: 6, display: 'block' }}>Insert Field:</label>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             <button type="button" className="btn-secondary btn-sm"
@@ -1531,8 +1631,9 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                             rows={5}
                             style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }} />
                           <p className="help-text" style={{ marginTop: 6 }}>
-                            Available tokens: <code>{'{dimension}'}</code>, <code>{'{bar1}'}</code>, <code>{'{bar2}'}</code>, <code>{'{line}'}</code>,
-                            <code>{'{bar1_label}'}</code>, <code>{'{bar1_value}'}</code>, <code>{'{measure}'}</code>, <code>{'{value}'}</code>
+                            <strong>Tokens:</strong> <code>{'{dimension}'}</code>, <code>{'{bar1}'}</code>, <code>{'{bar2}'}</code>, <code>{'{line}'}</code>,
+                            <code>{'{bar1_label}'}</code>, <code>{'{bar1_value}'}</code>, <code>{'{measure}'}</code>, <code>{'{value}'}</code><br/>
+                            <strong>HTML:</strong> Select text and use formatting buttons above, or use tags like <code>&lt;b&gt;</code>, <code>&lt;i&gt;</code>, <code>&lt;u&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;small&gt;</code>, <code>&lt;br/&gt;</code>
                           </p>
                         </div>
                         {localConfig.tooltipTemplate && (
