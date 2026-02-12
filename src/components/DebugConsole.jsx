@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 function DebugConsole() {
   const [isVisible, setIsVisible] = useState(false)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [logs, setLogs] = useState([])
-  const [position, setPosition] = useState({ bottom: 20, right: 20 })
-  const [isDragging, setIsDragging] = useState(false)
   const contentRef = useRef(null)
+  const panelRef = useRef(null)
+  const isDraggingRef = useRef(false)
   const dragOffsetRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
@@ -22,7 +22,7 @@ function DebugConsole() {
         typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(' ')
 
-      setLogs(prev => [...prev.slice(-499), { type, timestamp, message }])
+      setLogs(prev => [...prev.slice(-199), { type, timestamp, message }])
 
       // Auto-scroll to bottom
       if (contentRef.current) {
@@ -52,10 +52,43 @@ function DebugConsole() {
       addLog('info', ...args)
     }
 
-    // Check for ?debug=1 in URL
-    if (window.location.search.includes('debug=1') || window.location.search.includes('debug=true')) {
+    // Global error handler
+    const handleError = (event) => {
+      console.error('Uncaught Error:', event.error?.message || event.message, event.error?.stack || '')
+    }
+    window.addEventListener('error', handleError)
+
+    // Check for ?debug=1 in URL or localhost
+    const isDebugMode = window.location.search.includes('debug=1') ||
+                        window.location.search.includes('debug=true') ||
+                        window.location.hostname === 'localhost'
+
+    if (isDebugMode) {
       setIsVisible(true)
-      console.log('Debug mode activated via URL parameter')
+      setIsPanelOpen(true)
+
+      // Log environment info
+      setTimeout(() => {
+        console.info('=== DEBUG CONSOLE INITIALIZED ===')
+        console.info('Hostname:', window.location.hostname)
+        console.info('Port:', window.location.port)
+        console.info('User Agent:', navigator.userAgent)
+
+        // Tableau info
+        if (typeof tableau !== 'undefined') {
+          try {
+            console.info('Tableau Extensions API:', tableau.extensions ? 'Available' : 'Not Available')
+            if (tableau.extensions?.environment) {
+              console.info('Tableau Environment:', tableau.extensions.environment)
+            }
+          } catch (e) {
+            console.warn('Could not access Tableau info:', e.message)
+          }
+        } else {
+          console.warn('Tableau Extensions API not loaded yet')
+        }
+        console.info('=================================')
+      }, 100)
     }
 
     // Cleanup
@@ -64,6 +97,7 @@ function DebugConsole() {
       console.warn = originalWarn
       console.error = originalError
       console.info = originalInfo
+      window.removeEventListener('error', handleError)
     }
   }, [])
 
@@ -83,53 +117,103 @@ function DebugConsole() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isVisible])
 
-  const handleMouseDown = (e) => {
+  // Ref-based drag for smooth performance (no re-renders during drag)
+  const handleDragMove = useCallback((e) => {
+    if (!isDraggingRef.current || !panelRef.current) return
+    const x = Math.max(0, Math.min(window.innerWidth - 200, e.clientX - dragOffsetRef.current.x))
+    const y = Math.max(0, Math.min(window.innerHeight - 60, e.clientY - dragOffsetRef.current.y))
+    panelRef.current.style.left = `${x}px`
+    panelRef.current.style.top = `${y}px`
+    panelRef.current.style.right = 'auto'
+    panelRef.current.style.bottom = 'auto'
+  }, [])
+
+  const handleDragEnd = useCallback(() => {
+    isDraggingRef.current = false
+    document.removeEventListener('mousemove', handleDragMove)
+    document.removeEventListener('mouseup', handleDragEnd)
+  }, [handleDragMove])
+
+  const handleMouseDown = useCallback((e) => {
     if (e.target.closest('.debug-actions')) return
-    setIsDragging(true)
-    const rect = e.currentTarget.getBoundingClientRect()
+    isDraggingRef.current = true
+    const rect = panelRef.current.getBoundingClientRect()
     dragOffsetRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top
     }
-  }
+    document.addEventListener('mousemove', handleDragMove)
+    document.addEventListener('mouseup', handleDragEnd)
+  }, [handleDragMove, handleDragEnd])
 
-  const handleMouseMove = (e) => {
-    if (!isDragging) return
-
-    const newRight = window.innerWidth - e.clientX + dragOffsetRef.current.x - 400
-    const newBottom = window.innerHeight - e.clientY + dragOffsetRef.current.y - 300
-
-    setPosition({
-      right: Math.max(0, Math.min(window.innerWidth - 400, newRight)),
-      bottom: Math.max(0, Math.min(window.innerHeight - 300, newBottom))
-    })
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
+  // Cleanup drag listeners on unmount
   useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-      }
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove)
+      document.removeEventListener('mouseup', handleDragEnd)
     }
-  }, [isDragging])
+  }, [handleDragMove, handleDragEnd])
 
-  const handleClear = () => {
+  const handleClear = (e) => {
+    e.stopPropagation()
     setLogs([])
     console.log('Debug console cleared')
   }
 
-  const handleCopy = () => {
+  const handleCopy = (e) => {
+    e.stopPropagation()
+    console.log('[DebugConsole] Copy button clicked')
+
     const text = logs.map(l => `[${l.timestamp}] ${l.type.toUpperCase()}: ${l.message}`).join('\n')
-    navigator.clipboard.writeText(text).then(() => {
-      console.info('Logs copied to clipboard')
-    })
+
+    if (text.length === 0) {
+      console.warn('[DebugConsole] No logs to copy')
+      alert('No logs to copy yet!')
+      return
+    }
+
+    console.log('[DebugConsole] Attempting to copy', text.length, 'characters')
+
+    // Use execCommand as primary method (works best in Tableau webview)
+    try {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.left = '-9999px'
+      textarea.style.top = '0'
+      document.body.appendChild(textarea)
+
+      textarea.focus()
+      textarea.select()
+
+      const success = document.execCommand('copy')
+      console.log('[DebugConsole] execCommand result:', success)
+
+      document.body.removeChild(textarea)
+
+      if (success) {
+        console.info('✓ Logs copied to clipboard!')
+      } else {
+        throw new Error('execCommand returned false')
+      }
+      return
+    } catch (err) {
+      console.error('[DebugConsole] Copy failed:', err)
+      // execCommand failed, show alert as fallback
+      const preview = text.length > 500 ? text.substring(0, 500) + '\n\n... (truncated)' : text
+      alert('📋 Copy Logs\n\nCould not copy automatically. Please manually copy:\n\n' + preview)
+    }
+  }
+
+  const handleHide = (e) => {
+    e.stopPropagation()
+    setIsVisible(false)
+    console.log('Debug mode hidden')
+  }
+
+  const handleClose = (e) => {
+    e.stopPropagation()
+    setIsPanelOpen(false)
   }
 
   if (!isVisible) return null
@@ -147,18 +231,15 @@ function DebugConsole() {
       {isPanelOpen && (
         <div
           className="debug-panel"
-          style={{
-            right: `${position.right}px`,
-            bottom: `${position.bottom}px`
-          }}
+          ref={panelRef}
         >
           <div className="debug-header" onMouseDown={handleMouseDown}>
             <span>Debug Console (drag to move)</span>
             <div className="debug-actions">
               <button onClick={handleClear} title="Clear logs">Clear</button>
               <button onClick={handleCopy} title="Copy all logs">Copy</button>
-              <button onClick={() => setIsVisible(false)} title="Hide debug mode">Hide</button>
-              <button onClick={() => setIsPanelOpen(false)} title="Close">×</button>
+              <button onClick={handleHide} title="Hide debug mode">Hide</button>
+              <button onClick={handleClose} title="Close">×</button>
             </div>
           </div>
           <div className="debug-content" ref={contentRef}>

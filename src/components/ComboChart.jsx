@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
+import { Config } from '../utils/config'
 
 function ComboChart({ data, columns, config }) {
   const svgRef = useRef(null)
   const containerRef = useRef(null)
+  const tooltipRef = useRef(null)
 
   useEffect(() => {
     if (!data || data.length === 0 || !svgRef.current) return
@@ -11,192 +13,848 @@ function ComboChart({ data, columns, config }) {
     // Clear previous chart
     d3.select(svgRef.current).selectAll('*').remove()
 
-    // Get dimensions
+    // Get dimensions from container (fills available space)
     const container = containerRef.current
-    const width = container.clientWidth
-    const height = config.height
-    const margin = config.margins
+    const rect = container.getBoundingClientRect()
+    const width = rect.width
+    const height = rect.height || config.height
+
+    // Calculate responsive margins based on axis visibility, labels, and titles
+    const baseMargin = Math.min(width, height) * 0.08
+
+    // Bottom margin: x-axis labels (rotation-aware) + title
+    let marginBottom = 10
+    if (config.xAxisShow !== false) {
+      if (config.xAxisShowLabels !== false) {
+        const xRotation = Math.abs(config.xAxisRotation || 0)
+        marginBottom = xRotation === 0 ? 30 : xRotation <= 45 ? 50 : 70
+      } else {
+        marginBottom = 15
+      }
+      if (config.xAxisShowTitle !== false) marginBottom += 25
+    }
+
+    // Left margin: y-axis labels + title
+    let marginLeft = 10
+    if (config.yAxisLeftShow !== false) {
+      if (config.yAxisLeftShowLabels !== false) {
+        marginLeft = Math.max(60, Math.min(100, baseMargin * 1.4))
+      } else {
+        marginLeft = 15
+      }
+      if (config.yAxisLeftShowTitle !== false) marginLeft += 30
+    }
+
+    // Right margin: right y-axis + title (dual mode only)
+    const isSharedAxisMode = config.axisMode === 'shared'
+    let marginRight = 10
+    if (!isSharedAxisMode && config.yAxisRightShow !== false) {
+      if (config.yAxisRightShowLabels !== false) {
+        marginRight = Math.max(50, Math.min(80, baseMargin * 1.1))
+      } else {
+        marginRight = 15
+      }
+      if (config.yAxisRightShowTitle !== false) marginRight += 25
+    }
+
+    const margin = {
+      top: config.margins?.top || 20,
+      right: marginRight,
+      bottom: marginBottom,
+      left: marginLeft
+    }
 
     const chartWidth = width - margin.left - margin.right
     const chartHeight = height - margin.top - margin.bottom
+
+    // Typography config
+    const fontFamily = config.fontFamily || '"Tableau Book", Arial, sans-serif'
+    const labelWeight = config.labelWeight || '400'
+
+    // Resolve per-element font with fallback to global settings
+    const resolveFont = (fontKey) => {
+      const f = config[fontKey] || {}
+      return {
+        family: f.family || fontFamily,
+        size: f.size || 12,
+        weight: f.weight || labelWeight,
+        color: f.color || '#666666',
+        italic: f.italic || false
+      }
+    }
 
     // Create SVG
     const svg = d3.select(svgRef.current)
       .attr('width', width)
       .attr('height', height)
+      .style('background', Config.themes[config.theme]?.backgroundColor || '#fff')
+      .style('font-family', fontFamily)
 
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`)
 
-    // Extract field names
-    const dimensionField = columns[0]?.fieldName
-    const bar1Field = columns[1]?.fieldName
-    const bar2Field = columns[2]?.fieldName
-    const lineField = columns[3]?.fieldName
+    // Strip aggregation prefixes from field names for display (e.g. "SUM(Sales)" → "Sales")
+    const getDisplayName = (fieldName) => {
+      if (!fieldName) return ''
+      return fieldName.replace(/^(SUM|AVG|MIN|MAX|COUNT|AGG|MEDIAN|STDEV|VAR)\((.+)\)$/i, '$2').trim()
+    }
+
+    // Number formatter for axis labels and data labels
+    const getFormatter = (format, decimals = 0, currencySymbol = '$') => {
+      if (!format || format === 'auto') return null
+      switch (format) {
+        case 'number': return d3.format(`,.${decimals}f`)
+        case 'currency': return v => `${currencySymbol}${d3.format(`,.${decimals}f`)(v)}`
+        case 'percent': return d3.format(`.${decimals}%`)
+        case 'compact': return v => {
+          const abs = Math.abs(v)
+          if (abs >= 1e9) return d3.format(`.${decimals}f`)(v / 1e9) + 'B'
+          if (abs >= 1e6) return d3.format(`.${decimals}f`)(v / 1e6) + 'M'
+          if (abs >= 1e3) return d3.format(`.${decimals}f`)(v / 1e3) + 'K'
+          return d3.format(`,.${decimals}f`)(v)
+        }
+        default: return null
+      }
+    }
+
+    // Extract field names from config (encoding-based mappings only, no fallbacks)
+    const dimensionField = config.dimension
+    const bar1Field = config.bar1Measure
+    const bar2Field = config.bar2Measure
+    const lineField = config.lineMeasure
+
+    // Validate: need at least Category and one measure to render
+    const hasDimension = !!dimensionField
+    const hasMeasure = !!(bar1Field || bar2Field || lineField)
+
+    if (!hasDimension || !hasMeasure) {
+      const missingParts = []
+      if (!hasDimension) missingParts.push('a Category dimension')
+      if (!hasMeasure) missingParts.push('at least one measure')
+
+      svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', height / 2 - 10)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '14px')
+        .attr('fill', '#666')
+        .text('Assign ' + missingParts.join(' and '))
+      svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', height / 2 + 15)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '12px')
+        .attr('fill', '#999')
+        .text('Use the marks card or open Settings to configure')
+      return
+    }
 
     // Prepare data
     const chartData = data.map(d => ({
       category: d[dimensionField]?.formattedValue || d[dimensionField]?.value,
-      bar1: parseFloat(d[bar1Field]?.value) || 0,
-      bar2: parseFloat(d[bar2Field]?.value) || 0,
-      line: parseFloat(d[lineField]?.value) || 0
+      bar1: bar1Field ? (parseFloat(d[bar1Field]?.value) || 0) : 0,
+      bar2: bar2Field ? (parseFloat(d[bar2Field]?.value) || 0) : 0,
+      line: lineField ? (parseFloat(d[lineField]?.value) || 0) : 0
     }))
 
-    // Scales
+    // Apply x-axis sort order
+    const xSort = config.xAxisSort || 'default'
+    if (xSort === 'asc') {
+      chartData.sort((a, b) => String(a.category).localeCompare(String(b.category)))
+    } else if (xSort === 'desc') {
+      chartData.sort((a, b) => String(b.category).localeCompare(String(a.category)))
+    } else if (xSort === 'reverse') {
+      chartData.reverse()
+    }
+
+    // Get easing function
+    const easingFunctions = {
+      'easeLinear': d3.easeLinear,
+      'easeCubicOut': d3.easeCubicOut,
+      'easeCubicInOut': d3.easeCubicInOut,
+      'easeElastic': d3.easeElasticOut,
+      'easeBounce': d3.easeBounceOut,
+      'easeBack': d3.easeBackOut,
+      'easeQuad': d3.easeQuadOut
+    }
+    const easing = easingFunctions[config.animationEasing] || d3.easeCubicOut
+
+    // X Scale
     const x0 = d3.scaleBand()
       .domain(chartData.map(d => d.category))
       .range([0, chartWidth])
       .padding(config.barPadding)
 
+    // Determine which series are active
+    const hasBar1 = !!bar1Field
+    const hasBar2 = !!bar2Field
+    const hasLine = !!lineField
+
+    // For grouped bars, create inner scale (only active bars)
+    const activeBars = []
+    if (hasBar1) activeBars.push('bar1')
+    if (hasBar2) activeBars.push('bar2')
+
     const x1 = d3.scaleBand()
-      .domain(['bar1', 'bar2'])
+      .domain(activeBars.length > 0 ? activeBars : ['bar1'])
       .range([0, x0.bandwidth()])
-      .padding(0.05)
+      .padding(config.barGap / 100)
+
+    // Y Scales
+    let yLeftDomain, yRightDomain
+
+    // Calculate domains with include zero option
+    const bar1Values = hasBar1 ? chartData.map(d => d.bar1) : [0]
+    const bar2Values = hasBar2 ? chartData.map(d => d.bar2) : [0]
+    const lineValues = hasLine ? chartData.map(d => d.line) : [0]
+
+    const bar1Max = d3.max(bar1Values)
+    const bar2Max = d3.max(bar2Values)
+    const bar1Min = d3.min(bar1Values)
+    const bar2Min = d3.min(bar2Values)
+    const lineMax = d3.max(lineValues)
+    const lineMin = d3.min(lineValues)
+
+    if (config.barStyle === 'stacked') {
+      const stackedMax = d3.max(chartData, d => (hasBar1 ? d.bar1 : 0) + (hasBar2 ? d.bar2 : 0))
+      const autoMin = config.yAxisLeftIncludeZero !== false ? 0 : Math.min(bar1Min, bar2Min) * 0.9
+      yLeftDomain = [
+        config.yAxisLeftMin !== null ? config.yAxisLeftMin : autoMin,
+        config.yAxisLeftMax !== null ? config.yAxisLeftMax : (stackedMax || 1) * 1.1
+      ]
+    } else {
+      const barMax = Math.max(bar1Max, bar2Max) || 1
+      const barMin = Math.min(bar1Min, bar2Min)
+      const autoMin = config.yAxisLeftIncludeZero !== false ? 0 : barMin * 0.9
+      yLeftDomain = [
+        config.yAxisLeftMin !== null ? config.yAxisLeftMin : autoMin,
+        config.yAxisLeftMax !== null ? config.yAxisLeftMax : barMax * 1.1
+      ]
+    }
+
+    const autoRightMin = config.yAxisRightIncludeZero !== false ? 0 : lineMin * 0.9
+    yRightDomain = [
+      config.yAxisRightMin !== null ? config.yAxisRightMin : autoRightMin,
+      config.yAxisRightMax !== null ? config.yAxisRightMax : (lineMax || 1) * 1.1
+    ]
+
+    // Shared axis mode: combine all measures into one scale
+    const isSharedAxis = isSharedAxisMode
+    if (isSharedAxis) {
+      const combinedMax = Math.max(bar1Max, bar2Max, lineMax) * 1.1
+      const combinedMin = config.yAxisLeftIncludeZero !== false ? 0 : Math.min(bar1Min, bar2Min, lineMin) * 0.9
+      yLeftDomain = [
+        config.yAxisLeftMin !== null ? config.yAxisLeftMin : combinedMin,
+        config.yAxisLeftMax !== null ? config.yAxisLeftMax : combinedMax
+      ]
+    }
 
     const yLeft = d3.scaleLinear()
-      .domain([0, d3.max(chartData, d => Math.max(d.bar1, d.bar2))])
+      .domain(yLeftDomain)
       .nice()
       .range([chartHeight, 0])
 
+    // In shared mode or syncDualAxis, right axis uses left scale domain
     const yRight = d3.scaleLinear()
-      .domain([0, d3.max(chartData, d => d.line)])
+      .domain((isSharedAxis || config.syncDualAxis) ? yLeftDomain : yRightDomain)
       .nice()
-      .range([chartHeight, 0])
 
-    // Axes
-    const xAxis = d3.axisBottom(x0)
-    const yAxisLeft = d3.axisLeft(yLeft)
-    const yAxisRight = d3.axisRight(yRight)
+    // Line vertical position: compress yRight range to position line in a portion of the chart
+    const linePos = config.lineVerticalPosition || 'auto'
+    if (linePos !== 'auto') {
+      const positionMap = { top: 0.25, upper: 0.40, middle: 0.55, lower: 0.70, bottom: 0.85 }
+      const topFraction = positionMap[linePos] || 0
+      yRight.range([chartHeight, chartHeight * topFraction])
+    } else {
+      yRight.range([chartHeight, 0])
+    }
 
     // Draw grid
-    if (config.showGrid) {
-      g.append('g')
-        .attr('class', 'grid')
-        .call(d3.axisLeft(yLeft)
-          .tickSize(-chartWidth)
-          .tickFormat(''))
-        .style('stroke', config.themes[config.theme]?.gridColor || '#e0e0e0')
-        .style('stroke-opacity', 0.1)
+    if (config.gridHorizontal || config.gridVertical) {
+      const gridGroup = g.append('g').attr('class', 'grid')
+
+      if (config.gridHorizontal) {
+        const hGrid = gridGroup.append('g')
+          .call(d3.axisLeft(yLeft)
+            .tickSize(-chartWidth)
+            .tickFormat(''))
+        hGrid.selectAll('line')
+          .style('stroke', config.gridColor)
+          .style('stroke-opacity', config.gridOpacity)
+        hGrid.selectAll('text').remove()
+        hGrid.select('.domain').remove()
+      }
+
+      if (config.gridVertical) {
+        const vGrid = gridGroup.append('g')
+          .attr('transform', `translate(0,${chartHeight})`)
+          .call(d3.axisBottom(x0)
+            .tickSize(-chartHeight)
+            .tickFormat(''))
+        vGrid.selectAll('line')
+          .style('stroke', config.gridColor)
+          .style('stroke-opacity', config.gridOpacity)
+        vGrid.selectAll('text').remove()
+        vGrid.select('.domain').remove()
+      }
     }
 
-    // Draw bars
-    const barGroup = g.selectAll('.bar-group')
-      .data(chartData)
-      .enter().append('g')
-      .attr('class', 'bar-group')
-      .attr('transform', d => `translate(${x0(d.category)},0)`)
-
-    barGroup.append('rect')
-      .attr('class', 'bar1')
-      .attr('x', x1('bar1'))
-      .attr('width', x1.bandwidth())
-      .attr('y', chartHeight)
-      .attr('height', 0)
-      .attr('fill', config.bar1Color)
-      .attr('opacity', config.barOpacity)
-      .transition()
-      .duration(config.animationEnabled ? 800 : 0)
-      .attr('y', d => yLeft(d.bar1))
-      .attr('height', d => chartHeight - yLeft(d.bar1))
-
-    barGroup.append('rect')
-      .attr('class', 'bar2')
-      .attr('x', x1('bar2'))
-      .attr('width', x1.bandwidth())
-      .attr('y', chartHeight)
-      .attr('height', 0)
-      .attr('fill', config.bar2Color)
-      .attr('opacity', config.barOpacity)
-      .transition()
-      .duration(config.animationEnabled ? 800 : 0)
-      .attr('y', d => yLeft(d.bar2))
-      .attr('height', d => chartHeight - yLeft(d.bar2))
-
-    // Draw line
-    const line = d3.line()
-      .x(d => x0(d.category) + x0.bandwidth() / 2)
-      .y(d => yRight(d.line))
-
-    const path = g.append('path')
-      .datum(chartData)
-      .attr('class', 'line')
-      .attr('fill', 'none')
-      .attr('stroke', config.lineColor)
-      .attr('stroke-width', config.lineWidth)
-      .attr('d', line)
-
-    if (config.animationEnabled) {
-      const pathLength = path.node().getTotalLength()
-      path
-        .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
-        .attr('stroke-dashoffset', pathLength)
-        .transition()
-        .duration(1200)
-        .attr('stroke-dashoffset', 0)
-    }
-
-    // Draw line points
-    if (config.showPoints) {
-      g.selectAll('.line-point')
+    // Draw bars (only active series)
+    if ((hasBar1 || hasBar2) && config.barStyle === 'grouped') {
+      // Grouped bars
+      const barGroup = g.selectAll('.bar-group')
         .data(chartData)
-        .enter().append('circle')
-        .attr('class', 'line-point')
-        .attr('cx', d => x0(d.category) + x0.bandwidth() / 2)
-        .attr('cy', d => yRight(d.line))
-        .attr('r', 0)
-        .attr('fill', config.lineColor)
-        .transition()
-        .duration(config.animationEnabled ? 800 : 0)
-        .delay((d, i) => config.animationEnabled ? i * 50 : 0)
-        .attr('r', config.pointRadius)
+        .enter().append('g')
+        .attr('class', 'bar-group')
+        .attr('transform', d => `translate(${x0(d.category)},0)`)
+
+      // Bar 1
+      let bar1Rects
+      if (hasBar1) {
+        bar1Rects = barGroup.append('rect')
+          .attr('class', 'bar1')
+          .attr('x', x1('bar1'))
+          .attr('width', x1.bandwidth())
+          .attr('y', chartHeight)
+          .attr('height', 0)
+          .attr('fill', config.bar1Color)
+          .attr('opacity', config.bar1Opacity)
+          .attr('rx', config.bar1CornerRadius)
+          .attr('ry', config.bar1CornerRadius)
+
+        if (config.bar1ShowBorder) {
+          bar1Rects.attr('stroke', config.bar1BorderColor)
+            .attr('stroke-width', config.bar1BorderWidth)
+        }
+
+        bar1Rects.transition()
+          .duration(config.animationEnabled ? config.animationDuration : 0)
+          .delay((d, i) => config.animationEnabled ? i * 20 : 0)
+          .ease(easing)
+          .attr('y', d => yLeft(d.bar1))
+          .attr('height', d => chartHeight - yLeft(d.bar1))
+      }
+
+      // Bar 2
+      let bar2Rects
+      if (hasBar2) {
+        bar2Rects = barGroup.append('rect')
+          .attr('class', 'bar2')
+          .attr('x', x1('bar2'))
+          .attr('width', x1.bandwidth())
+          .attr('y', chartHeight)
+          .attr('height', 0)
+          .attr('fill', config.bar2Color)
+          .attr('opacity', config.bar2Opacity)
+          .attr('rx', config.bar2CornerRadius)
+          .attr('ry', config.bar2CornerRadius)
+
+        if (config.bar2ShowBorder) {
+          bar2Rects.attr('stroke', config.bar2BorderColor)
+            .attr('stroke-width', config.bar2BorderWidth)
+        }
+
+        bar2Rects.transition()
+          .duration(config.animationEnabled ? config.animationDuration : 0)
+          .delay((d, i) => config.animationEnabled ? i * 20 + 50 : 0)
+          .ease(easing)
+          .attr('y', d => yLeft(d.bar2))
+          .attr('height', d => chartHeight - yLeft(d.bar2))
+      }
+
+      // Bar labels
+      if (config.barLabelsShow) {
+        const b1Font = resolveFont('bar1LabelFont')
+        const b2Font = resolveFont('bar2LabelFont')
+
+        if (hasBar1) {
+          barGroup.append('text')
+            .attr('class', 'bar1-label')
+            .attr('x', x1('bar1') + x1.bandwidth() / 2)
+            .attr('y', d => {
+              if (config.barLabelsPosition === 'top') return yLeft(d.bar1) - 5
+              if (config.barLabelsPosition === 'center') return yLeft(d.bar1) + (chartHeight - yLeft(d.bar1)) / 2
+              return yLeft(d.bar1) + 15
+            })
+            .attr('text-anchor', 'middle')
+            .attr('font-size', b1Font.size + 'px')
+            .style('font-family', b1Font.family)
+            .style('font-weight', b1Font.weight)
+            .style('font-style', b1Font.italic ? 'italic' : 'normal')
+            .attr('fill', b1Font.color)
+            .text(d => d.bar1.toFixed(0))
+            .style('opacity', 0)
+            .transition()
+            .duration(config.animationEnabled ? config.animationDuration : 0)
+            .style('opacity', 1)
+        }
+
+        if (hasBar2) {
+          barGroup.append('text')
+            .attr('class', 'bar2-label')
+            .attr('x', x1('bar2') + x1.bandwidth() / 2)
+            .attr('y', d => {
+              if (config.barLabelsPosition === 'top') return yLeft(d.bar2) - 5
+              if (config.barLabelsPosition === 'center') return yLeft(d.bar2) + (chartHeight - yLeft(d.bar2)) / 2
+              return yLeft(d.bar2) + 15
+            })
+            .attr('text-anchor', 'middle')
+            .attr('font-size', b2Font.size + 'px')
+            .style('font-family', b2Font.family)
+            .style('font-weight', b2Font.weight)
+            .style('font-style', b2Font.italic ? 'italic' : 'normal')
+            .attr('fill', b2Font.color)
+            .text(d => d.bar2.toFixed(0))
+            .style('opacity', 0)
+            .transition()
+            .duration(config.animationEnabled ? config.animationDuration : 0)
+            .style('opacity', 1)
+        }
+      }
+
+      // Tooltips for bars
+      if (config.tooltipShow) {
+        if (bar1Rects) {
+          bar1Rects.on('mouseover', function(event, d) {
+            showTooltip(event, d.category, bar1Field, d.bar1)
+          }).on('mouseout', hideTooltip)
+        }
+        if (bar2Rects) {
+          bar2Rects.on('mouseover', function(event, d) {
+            showTooltip(event, d.category, bar2Field, d.bar2)
+          }).on('mouseout', hideTooltip)
+        }
+      }
+
+    } else if ((hasBar1 || hasBar2) && config.barStyle === 'stacked') {
+      // Stacked bars
+      const stackData = chartData.map(d => ({
+        category: d.category,
+        bar1: d.bar1,
+        bar2: d.bar2,
+        total: (hasBar1 ? d.bar1 : 0) + (hasBar2 ? d.bar2 : 0)
+      }))
+
+      const barGroup = g.selectAll('.bar-group')
+        .data(stackData)
+        .enter().append('g')
+        .attr('class', 'bar-group')
+        .attr('transform', d => `translate(${x0(d.category)},0)`)
+
+      // Bar 1 (bottom)
+      let bar1Rects
+      if (hasBar1) {
+        bar1Rects = barGroup.append('rect')
+          .attr('class', 'bar1')
+          .attr('x', 0)
+          .attr('width', x0.bandwidth())
+          .attr('y', chartHeight)
+          .attr('height', 0)
+          .attr('fill', config.bar1Color)
+          .attr('opacity', config.bar1Opacity)
+
+        if (config.bar1ShowBorder) {
+          bar1Rects.attr('stroke', config.bar1BorderColor)
+            .attr('stroke-width', config.bar1BorderWidth)
+        }
+
+        bar1Rects.transition()
+          .duration(config.animationEnabled ? config.animationDuration : 0)
+          .ease(easing)
+          .attr('y', d => yLeft(d.bar1))
+          .attr('height', d => chartHeight - yLeft(d.bar1))
+      }
+
+      // Bar 2 (top - gets corner radius in stacked mode)
+      let bar2Rects
+      if (hasBar2) {
+        bar2Rects = barGroup.append('rect')
+          .attr('class', 'bar2')
+          .attr('x', 0)
+          .attr('width', x0.bandwidth())
+          .attr('y', chartHeight)
+          .attr('height', 0)
+          .attr('fill', config.bar2Color)
+          .attr('opacity', config.bar2Opacity)
+          .attr('rx', config.bar2CornerRadius)
+
+        if (config.bar2ShowBorder) {
+          bar2Rects.attr('stroke', config.bar2BorderColor)
+            .attr('stroke-width', config.bar2BorderWidth)
+        }
+
+        bar2Rects.transition()
+          .duration(config.animationEnabled ? config.animationDuration : 0)
+          .ease(easing)
+          .attr('y', d => yLeft(d.total))
+          .attr('height', d => yLeft(hasBar1 ? d.bar1 : 0) - yLeft(d.total))
+      }
+
+      // Tooltips for stacked bars
+      if (config.tooltipShow) {
+        if (bar1Rects) {
+          bar1Rects.on('mouseover', function(event, d) {
+            showTooltip(event, d.category, bar1Field, d.bar1)
+          }).on('mouseout', hideTooltip)
+        }
+        if (bar2Rects) {
+          bar2Rects.on('mouseover', function(event, d) {
+            showTooltip(event, d.category, bar2Field, d.bar2)
+          }).on('mouseout', hideTooltip)
+        }
+      }
+    }
+
+    // Draw line (only if line field is mapped)
+    if (hasLine) {
+      const lineCurves = {
+        'linear': d3.curveLinear,
+        'monotone': d3.curveMonotoneX,
+        'cardinal': d3.curveCardinal,
+        'step': d3.curveStepAfter
+      }
+
+      const line = d3.line()
+        .x(d => x0(d.category) + x0.bandwidth() / 2)
+        .y(d => yRight(d.line))
+        .curve(lineCurves[config.lineCurve] || d3.curveLinear)
+
+      const path = g.append('path')
+        .datum(chartData)
+        .attr('class', 'line')
+        .attr('fill', 'none')
+        .attr('stroke', config.lineColor)
+        .attr('stroke-width', config.lineWidth)
+        .attr('opacity', config.lineOpacity)
+        .attr('d', line)
+
+      // Line style
+      if (config.lineStyle === 'dashed') {
+        path.attr('stroke-dasharray', '8,4')
+      } else if (config.lineStyle === 'dotted') {
+        path.attr('stroke-dasharray', '2,2')
+      }
+
+      // Animate line
+      if (config.animationEnabled) {
+        const pathLength = path.node().getTotalLength()
+        path
+          .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
+          .attr('stroke-dashoffset', pathLength)
+          .transition()
+          .duration(config.animationDuration * 1.2)
+          .ease(easing)
+          .attr('stroke-dashoffset', 0)
+          .on('end', function() {
+            if (config.lineStyle === 'dashed') {
+              d3.select(this).attr('stroke-dasharray', '8,4')
+            } else if (config.lineStyle === 'dotted') {
+              d3.select(this).attr('stroke-dasharray', '2,2')
+            } else {
+              d3.select(this).attr('stroke-dasharray', null)
+            }
+          })
+      }
+
+      // Draw line points
+      if (config.showPoints) {
+        const pointsGroup = g.append('g').attr('class', 'points')
+
+        const shapes = {
+          'circle': d3.symbolCircle,
+          'square': d3.symbolSquare,
+          'diamond': d3.symbolDiamond,
+          'triangle': d3.symbolTriangle
+        }
+
+        const pointSymbol = d3.symbol()
+          .type(shapes[config.pointShape] || d3.symbolCircle)
+          .size(config.pointSize * config.pointSize * 4)
+
+        const points = pointsGroup.selectAll('.line-point')
+          .data(chartData)
+          .enter().append('path')
+          .attr('class', 'line-point')
+          .attr('transform', d => `translate(${x0(d.category) + x0.bandwidth() / 2},${yRight(d.line)})`)
+          .attr('d', pointSymbol)
+          .attr('fill', config.pointFill)
+          .attr('stroke', config.pointStroke)
+          .attr('stroke-width', config.pointStrokeWidth)
+          .style('opacity', 0)
+
+        points.transition()
+          .duration(config.animationEnabled ? config.animationDuration * 0.5 : 0)
+          .delay((d, i) => config.animationEnabled ? config.animationDuration * 0.8 + i * 30 : 0)
+          .ease(easing)
+          .style('opacity', 1)
+
+        // Tooltips for points
+        if (config.tooltipShow) {
+          points.on('mouseover', function(event, d) {
+            showTooltip(event, d.category, lineField, d.line)
+          }).on('mouseout', hideTooltip)
+        }
+
+        // Line labels
+        if (config.lineLabelsShow) {
+          pointsGroup.selectAll('.line-label')
+            .data(chartData)
+            .enter().append('text')
+            .attr('class', 'line-label')
+            .attr('x', d => x0(d.category) + x0.bandwidth() / 2)
+            .attr('y', d => {
+              if (config.lineLabelsPosition === 'top') return yRight(d.line) - 10
+              if (config.lineLabelsPosition === 'bottom') return yRight(d.line) + 15
+              return yRight(d.line) + 5
+            })
+            .attr('text-anchor', 'middle')
+            .attr('font-size', config.lineLabelsFontSize)
+            .style('font-family', fontFamily)
+            .style('font-weight', labelWeight)
+            .attr('fill', config.lineLabelsColor)
+            .text(d => d.line.toFixed(0))
+            .style('opacity', 0)
+            .transition()
+            .duration(config.animationEnabled ? config.animationDuration : 0)
+            .style('opacity', 1)
+        }
+      }
     }
 
     // Draw axes
-    g.append('g')
-      .attr('class', 'x-axis')
-      .attr('transform', `translate(0,${chartHeight})`)
-      .call(xAxis)
-      .style('color', config.themes[config.theme]?.axisColor || '#666')
+    if (config.xAxisShow) {
+      const xAxisGenerator = d3.axisBottom(x0)
 
-    g.append('g')
-      .attr('class', 'y-axis-left')
-      .call(yAxisLeft)
-      .style('color', config.themes[config.theme]?.axisColor || '#666')
+      if (!config.xAxisShowLabels) {
+        xAxisGenerator.tickFormat('')
+      }
+      if (!config.xAxisShowTickMarks) {
+        xAxisGenerator.tickSize(0)
+      }
 
-    g.append('g')
-      .attr('class', 'y-axis-right')
-      .attr('transform', `translate(${chartWidth},0)`)
-      .call(yAxisRight)
-      .style('color', config.themes[config.theme]?.axisColor || '#666')
+      const xFont = resolveFont('xAxisFont')
+      const xAxisGroup = g.append('g')
+        .attr('class', 'x-axis')
+        .attr('transform', `translate(0,${chartHeight})`)
+        .call(xAxisGenerator)
+        .style('color', xFont.color)
+        .style('font-family', xFont.family)
+        .style('font-weight', xFont.weight)
+        .style('font-size', xFont.size + 'px')
+        .style('font-style', xFont.italic ? 'italic' : 'normal')
 
-    // Legend
-    if (config.showLegend) {
-      const legend = svg.append('g')
-        .attr('class', 'legend')
-        .attr('transform', `translate(${width - 150}, 10)`)
+      // Tick and axis line colors
+      xAxisGroup.selectAll('.tick line').style('stroke', config.xAxisTickColor || '#999')
+      xAxisGroup.select('.domain').style('stroke', config.xAxisLineColor || '#999')
 
-      const legendData = [
-        { label: bar1Field || 'Bar 1', color: config.bar1Color },
-        { label: bar2Field || 'Bar 2', color: config.bar2Color },
-        { label: lineField || 'Line', color: config.lineColor }
-      ]
+      if (config.xAxisRotation !== 0) {
+        xAxisGroup.selectAll('text')
+          .attr('transform', `rotate(${config.xAxisRotation})`)
+          .style('text-anchor', 'end')
+          .attr('dx', '-0.8em')
+          .attr('dy', '0.15em')
+      } else {
+        // Apply x-axis label alignment
+        const xAlign = config.xAxisAlign || 'center'
+        if (xAlign !== 'center') {
+          xAxisGroup.selectAll('.tick text')
+            .style('text-anchor', xAlign === 'left' ? 'start' : 'end')
+        }
+      }
 
-      legendData.forEach((item, i) => {
-        const legendItem = legend.append('g')
-          .attr('transform', `translate(0, ${i * 20})`)
+      // Apply label offsets
+      if (config.xAxisLabelOffsetX || config.xAxisLabelOffsetY) {
+        xAxisGroup.selectAll('.tick text')
+          .attr('dx', (config.xAxisLabelOffsetX || 0) + 'px')
+          .attr('dy', (config.xAxisLabelOffsetY || 10) + 'px')
+      }
 
-        legendItem.append('rect')
-          .attr('width', 12)
-          .attr('height', 12)
-          .attr('fill', item.color)
+      if (!config.xAxisShowAxisLine) {
+        xAxisGroup.select('.domain').remove()
+      }
 
-        legendItem.append('text')
-          .attr('x', 18)
-          .attr('y', 10)
-          .text(item.label)
-          .style('font-size', '12px')
-          .style('fill', config.themes[config.theme]?.textColor || '#333')
-      })
+      // X Axis Title (offset adjusts for rotated labels)
+      // Falls back to dimension field name if no custom title set
+      const xTitle = config.xAxisTitle || getDisplayName(dimensionField)
+      if (config.xAxisShowTitle && xTitle) {
+        const absRotation = Math.abs(config.xAxisRotation || 0)
+        const titleYOffset = absRotation === 0 ? 45 : absRotation <= 45 ? 60 : 75
+        xAxisGroup.append('text')
+          .attr('class', 'x-axis-title')
+          .attr('x', chartWidth / 2)
+          .attr('y', titleYOffset)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', (xFont.size + 1) + 'px')
+          .style('font-family', xFont.family)
+          .style('font-weight', Math.min(700, xFont.weight + 100))
+          .attr('fill', xFont.color)
+          .text(xTitle)
+      }
+    }
+
+    if (config.yAxisLeftShow) {
+      const yAxisLeftGenerator = d3.axisLeft(yLeft)
+
+      if (!config.yAxisLeftShowLabels) {
+        yAxisLeftGenerator.tickFormat('')
+      } else {
+        const leftFmt = getFormatter(config.yAxisLeftFormat, config.yAxisLeftDecimals, config.yAxisLeftCurrencySymbol)
+        if (leftFmt) yAxisLeftGenerator.tickFormat(leftFmt)
+      }
+      if (!config.yAxisLeftShowTickMarks) {
+        yAxisLeftGenerator.tickSize(0)
+      }
+
+      const yLeftFont = resolveFont('yAxisLeftFont')
+      const yAxisLeftGroup = g.append('g')
+        .attr('class', 'y-axis-left')
+        .call(yAxisLeftGenerator)
+        .style('color', yLeftFont.color)
+        .style('font-family', yLeftFont.family)
+        .style('font-weight', yLeftFont.weight)
+        .style('font-size', yLeftFont.size + 'px')
+        .style('font-style', yLeftFont.italic ? 'italic' : 'normal')
+
+      // Tick and axis line colors
+      yAxisLeftGroup.selectAll('.tick line').style('stroke', config.yAxisLeftTickColor || '#999')
+      yAxisLeftGroup.select('.domain').style('stroke', config.yAxisLeftLineColor || '#999')
+
+      // Label offsets
+      if (config.yAxisLeftLabelOffsetX || config.yAxisLeftLabelOffsetY) {
+        yAxisLeftGroup.selectAll('.tick text')
+          .attr('dx', (config.yAxisLeftLabelOffsetX || 0) + 'px')
+          .attr('dy', (config.yAxisLeftLabelOffsetY || 0) + 'px')
+      }
+
+      if (!config.yAxisLeftShowAxisLine) {
+        yAxisLeftGroup.select('.domain').remove()
+      }
+
+      // Y Axis Left Title
+      // Falls back to "Bar1Name / Bar2Name" from field names
+      const leftParts = [getDisplayName(bar1Field), getDisplayName(bar2Field)].filter(Boolean)
+      const yLeftTitle = config.yAxisLeftTitle || leftParts.join(' / ')
+      if (config.yAxisLeftShowTitle && yLeftTitle) {
+        const titleXOffset = -Math.max(margin.left - 10, 60)
+        g.append('text')
+          .attr('class', 'y-axis-left-title')
+          .attr('transform', 'rotate(-90)')
+          .attr('x', -chartHeight / 2)
+          .attr('y', titleXOffset)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', (yLeftFont.size + 1) + 'px')
+          .style('font-family', yLeftFont.family)
+          .style('font-weight', Math.min(700, yLeftFont.weight + 100))
+          .attr('fill', yLeftFont.color)
+          .text(yLeftTitle)
+      }
+    }
+
+    // Right axis only in dual mode (hidden in shared mode)
+    if (config.yAxisRightShow && hasLine && !isSharedAxis) {
+      const yAxisRightGenerator = d3.axisRight(yRight)
+
+      if (!config.yAxisRightShowLabels) {
+        yAxisRightGenerator.tickFormat('')
+      } else {
+        const rightFmt = getFormatter(config.yAxisRightFormat, config.yAxisRightDecimals, config.yAxisRightCurrencySymbol)
+        if (rightFmt) yAxisRightGenerator.tickFormat(rightFmt)
+      }
+      if (!config.yAxisRightShowTickMarks) {
+        yAxisRightGenerator.tickSize(0)
+      }
+
+      const yRightFont = resolveFont('yAxisRightFont')
+      const yAxisRightGroup = g.append('g')
+        .attr('class', 'y-axis-right')
+        .attr('transform', `translate(${chartWidth},0)`)
+        .call(yAxisRightGenerator)
+        .style('color', yRightFont.color)
+        .style('font-family', yRightFont.family)
+        .style('font-weight', yRightFont.weight)
+        .style('font-size', yRightFont.size + 'px')
+        .style('font-style', yRightFont.italic ? 'italic' : 'normal')
+
+      // Tick and axis line colors
+      yAxisRightGroup.selectAll('.tick line').style('stroke', config.yAxisRightTickColor || '#999')
+      yAxisRightGroup.select('.domain').style('stroke', config.yAxisRightLineColor || '#999')
+
+      // Label offsets
+      if (config.yAxisRightLabelOffsetX || config.yAxisRightLabelOffsetY) {
+        yAxisRightGroup.selectAll('.tick text')
+          .attr('dx', (config.yAxisRightLabelOffsetX || 0) + 'px')
+          .attr('dy', (config.yAxisRightLabelOffsetY || 0) + 'px')
+      }
+
+      if (!config.yAxisRightShowAxisLine) {
+        yAxisRightGroup.select('.domain').remove()
+      }
+
+      // Y Axis Right Title
+      // Falls back to line field name
+      const yRightTitle = config.yAxisRightTitle || getDisplayName(lineField)
+      if (config.yAxisRightShowTitle && yRightTitle) {
+        const titleXOffset = -Math.max(margin.right - 15, 45)
+        yAxisRightGroup.append('text')
+          .attr('class', 'y-axis-right-title')
+          .attr('transform', 'rotate(90)')
+          .attr('x', chartHeight / 2)
+          .attr('y', titleXOffset)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', (yRightFont.size + 1) + 'px')
+          .style('font-family', yRightFont.family)
+          .style('font-weight', Math.min(700, yRightFont.weight + 100))
+          .attr('fill', yRightFont.color)
+          .text(yRightTitle)
+      }
+    }
+
+    // Title is rendered in the DOM header (App.jsx), not in SVG
+    // Legend is rendered as DOM elements below the SVG (see JSX return)
+
+    // Tooltip functions
+    function showTooltip(event, category, measureName, value) {
+      if (!tooltipRef.current) return
+
+      const tooltip = d3.select(tooltipRef.current)
+
+      let content = ''
+      if (config.tooltipShowDimension) {
+        content += `<strong>${category}</strong><br/>`
+      }
+      if (config.tooltipShowMeasureName) {
+        content += `${measureName}: `
+      }
+      if (config.tooltipShowValue) {
+        content += `${value.toFixed(2)}`
+      }
+
+      tooltip
+        .style('display', 'block')
+        .html(content)
+
+      // Position with viewport boundary checking
+      const tooltipNode = tooltipRef.current
+      const tooltipRect = tooltipNode.getBoundingClientRect()
+      let left = event.clientX + 15
+      let top = event.clientY - 10
+
+      if (left + tooltipRect.width > window.innerWidth) {
+        left = event.clientX - tooltipRect.width - 15
+      }
+      if (top + tooltipRect.height > window.innerHeight) {
+        top = event.clientY - tooltipRect.height - 10
+      }
+      if (top < 0) top = 5
+
+      tooltip
+        .style('left', left + 'px')
+        .style('top', top + 'px')
+    }
+
+    function hideTooltip() {
+      if (!tooltipRef.current) return
+      d3.select(tooltipRef.current).style('display', 'none')
     }
 
   }, [data, columns, config])
@@ -204,7 +862,6 @@ function ComboChart({ data, columns, config }) {
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      // Trigger re-render by creating a microtask
       Promise.resolve().then(() => {
         if (svgRef.current) {
           // Chart will re-render via the main useEffect
@@ -221,16 +878,129 @@ function ComboChart({ data, columns, config }) {
       <div className="chart-empty">
         <p>No data available</p>
         <p style={{ fontSize: '12px', color: '#666' }}>
-          Drag dimensions and measures to the marks card
+          Add fields to the marks card or check your data source
         </p>
       </div>
     )
   }
 
+  // Compute unmapped fields for hint below chart
+  const unmappedFields = []
+  if (!config.bar1Measure) unmappedFields.push('Bar 1')
+  if (!config.bar2Measure) unmappedFields.push('Bar 2')
+  if (!config.lineMeasure) unmappedFields.push('Line')
+
+  const hintText = (unmappedFields.length > 0 && unmappedFields.length < 3)
+    ? (unmappedFields.length === 1
+        ? `Tip: Add a field to ${unmappedFields[0]} on the marks card to display it`
+        : `Tip: Add fields to ${unmappedFields.join(' and ')} on the marks card to display them`)
+    : null
+
+  // Build legend data for DOM rendering
+  const legendData = []
+  if (config.bar1Measure) {
+    legendData.push({
+      label: config.legendBar1Label || config.bar1Measure || 'Bar 1',
+      color: config.bar1Color,
+      type: 'bar'
+    })
+  }
+  if (config.bar2Measure) {
+    legendData.push({
+      label: config.legendBar2Label || config.bar2Measure || 'Bar 2',
+      color: config.bar2Color,
+      type: 'bar'
+    })
+  }
+  if (config.lineMeasure) {
+    legendData.push({
+      label: config.legendLineLabel || config.lineMeasure || 'Line',
+      color: config.lineColor,
+      type: 'line'
+    })
+  }
+
+  const isVerticalLegend = config.legendPosition === 'left' || config.legendPosition === 'right'
+  const fontFamily = config.fontFamily || '"Tableau Book", Arial, sans-serif'
+  const themeColors = Config.themes[config.theme] || Config.themes.light
+  const legendBorder = `1px solid ${themeColors.gridColor || '#e0e0e0'}`
+  const lgFont = config.legendFont || {}
+  const legendStyle = {
+    display: 'flex',
+    flexDirection: isVerticalLegend ? 'column' : 'row',
+    flexWrap: 'wrap',
+    justifyContent: config.legendAlign === 'center' ? 'center' :
+                     config.legendAlign === 'right' ? 'flex-end' : 'flex-start',
+    alignItems: 'center',
+    gap: (config.legendGap || 24) + 'px',
+    padding: (config.legendPadding !== undefined ? config.legendPadding : 14) + 'px 20px',
+    fontFamily: lgFont.family || fontFamily,
+    fontSize: (lgFont.size || 13) + 'px',
+    fontWeight: lgFont.weight || 500,
+    fontStyle: lgFont.italic ? 'italic' : 'normal',
+    color: lgFont.color || themeColors.axisColor || '#666',
+    background: config.theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+    borderTop: legendBorder
+  }
+
   return (
-    <div ref={containerRef} className="combo-chart-container">
-      <svg ref={svgRef}></svg>
-    </div>
+    <>
+      {config.showLegend && config.legendPosition === 'top' && legendData.length > 0 && (
+        <div className="chart-legend" style={{...legendStyle, borderTop: 'none', borderBottom: legendBorder}}>
+          {legendData.map((item, i) => (
+            <div key={i} className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {item.type === 'bar'
+                ? <div style={{ width: 14, height: 14, backgroundColor: item.color, borderRadius: 4, flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }} />
+                : <div style={{ width: 20, height: 3, backgroundColor: item.color, borderRadius: 9999, flexShrink: 0 }} />
+              }
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div ref={containerRef} className="combo-chart-container">
+        <svg ref={svgRef}></svg>
+      </div>
+      {config.showLegend && config.legendPosition !== 'top' && legendData.length > 0 && (
+        <div className="chart-legend" style={legendStyle}>
+          {legendData.map((item, i) => (
+            <div key={i} className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {item.type === 'bar'
+                ? <div style={{ width: 14, height: 14, backgroundColor: item.color, borderRadius: 4, flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }} />
+                : <div style={{ width: 20, height: 3, backgroundColor: item.color, borderRadius: 9999, flexShrink: 0 }} />
+              }
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {hintText && (
+        <div className="chart-hint">{hintText}</div>
+      )}
+      {config.tooltipShow && (() => {
+        const ttFont = config.tooltipFont || {}
+        return (
+          <div
+            ref={tooltipRef}
+            style={{
+              position: 'fixed',
+              display: 'none',
+              background: config.tooltipBgColor,
+              color: ttFont.color || config.tooltipTextColor,
+              padding: '8px 12px',
+              borderRadius: '4px',
+              fontSize: (ttFont.size || config.tooltipFontSize) + 'px',
+              fontFamily: ttFont.family || fontFamily,
+              fontWeight: ttFont.weight || 400,
+              fontStyle: ttFont.italic ? 'italic' : 'normal',
+              pointerEvents: 'none',
+              zIndex: 1000,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}
+          />
+        )
+      })()}
+    </>
   )
 }
 
