@@ -96,7 +96,7 @@ export default function FormatControls({ prefix, localConfig, updateConfig, Numb
         <div className="form-row indent">
           <div className="form-group">
             <label className="form-label">Currency Symbol</label>
-            <input type="text" value={get('CurrencySymbol') || '$'} style={{ width: 60 }}
+            <input type="text" value={get('CurrencySymbol') ?? '$'} style={{ width: 60 }}
               onChange={(e) => set('CurrencySymbol', e.target.value)} />
           </div>
           <div className="form-group">
@@ -165,7 +165,7 @@ export default function FormatControls({ prefix, localConfig, updateConfig, Numb
               <div className="form-group">
                 <label className="form-label">Custom Format</label>
                 <input type="text" value={get('CustomDateFormat') || ''} style={{ width: 140 }}
-                  placeholder="e.g. %Y-%m-%d"
+                  placeholder="e.g. MMM' YY"
                   onChange={(e) => set('CustomDateFormat', e.target.value)} />
               </div>
             </div>

@@ -26,6 +26,55 @@ export const getFormatOpts = (config, prefix) => ({
 })
 
 /**
+ * Convert Tableau/Excel-style date format tokens to d3.timeFormat specifiers.
+ * If the string already contains '%', treat it as d3 native format.
+ * Tokens are matched greedily (longest first).
+ */
+const toD3DateFormat = (fmt) => {
+  if (!fmt || fmt.includes('%')) return fmt
+  // Token map: Tableau/Excel → d3.timeFormat (ordered longest-first)
+  const tokens = [
+    ['MMMM', '%B'],    // Full month: January
+    ['MMM', '%b'],     // Abbrev month: Jan
+    ['MM', '%m'],      // Zero-padded month: 01
+    ['M', '%-m'],      // Month: 1
+    ['dddd', '%A'],    // Full weekday: Monday
+    ['ddd', '%a'],     // Abbrev weekday: Mon
+    ['dd', '%d'],      // Zero-padded day: 01
+    ['d', '%-d'],      // Day: 1
+    ['YYYY', '%Y'],    // 4-digit year
+    ['yyyy', '%Y'],
+    ['YY', '%y'],      // 2-digit year
+    ['yy', '%y'],
+    ['HH', '%H'],      // 24-hour
+    ['hh', '%I'],      // 12-hour
+    ['mm', '%M'],      // Minutes
+    ['ss', '%S'],      // Seconds
+    ['tt', '%p'],      // AM/PM
+    ['a', '%p'],       // am/pm
+  ]
+  let result = ''
+  let i = 0
+  while (i < fmt.length) {
+    let matched = false
+    for (const [token, d3Token] of tokens) {
+      if (fmt.substring(i, i + token.length) === token) {
+        result += d3Token
+        i += token.length
+        matched = true
+        break
+      }
+    }
+    if (!matched) {
+      // Quarter: Q → computed separately, pass through as literal
+      result += fmt[i]
+      i++
+    }
+  }
+  return result
+}
+
+/**
  * Build a date formatter from preset key or custom format string
  */
 const buildDateFormatter = (dateFormat, customDateFormat) => {
@@ -60,7 +109,7 @@ const buildDateFormatter = (dateFormat, customDateFormat) => {
       }
       case 'custom':
         try {
-          return d3.timeFormat(customDateFormat || '%Y-%m-%d')(date)
+          return d3.timeFormat(toD3DateFormat(customDateFormat) || '%Y-%m-%d')(date)
         } catch {
           return String(value)
         }

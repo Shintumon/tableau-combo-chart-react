@@ -316,6 +316,8 @@ export const Config = {
     legendBar2Label: '',  // Custom label for bar 2
     legendLineLabel: '',  // Custom label for line
     legendBgColor: 'transparent',
+    legendLayout: 'wrap', // 'wrap' (multiple rows) or 'nowrap' (single row)
+    legendVerticalAlign: 'top', // 'top', 'center', 'bottom' — used for left/right positioned legends
     legendPadding: 14,
     legendGap: 24,
 
@@ -337,8 +339,11 @@ export const Config = {
 
     // Per-element font settings (empty family = fall back to global fontFamily)
     xAxisFont: { family: '', size: 12, weight: 400, color: '#666666', italic: false },
+    xAxisLabelFont: { family: '', size: 12, weight: 400, color: '#666666', italic: false },
     yAxisLeftFont: { family: '', size: 12, weight: 400, color: '#666666', italic: false },
+    yAxisLeftLabelFont: { family: '', size: 12, weight: 400, color: '#666666', italic: false },
     yAxisRightFont: { family: '', size: 12, weight: 400, color: '#666666', italic: false },
+    yAxisRightLabelFont: { family: '', size: 12, weight: 400, color: '#666666', italic: false },
     legendFont: { family: '', size: 13, weight: 500, color: '#666666', italic: false },
     bar1LabelFont: { family: '', size: 12, weight: 400, color: '#333333', italic: false },
     bar2LabelFont: { family: '', size: 12, weight: 400, color: '#333333', italic: false },
