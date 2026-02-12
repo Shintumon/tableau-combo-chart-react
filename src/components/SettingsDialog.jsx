@@ -1570,9 +1570,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 const start = textarea.selectionStart
                                 const end = textarea.selectionEnd
                                 const text = textarea.value
-                                const field = '{dimension}'
-                                textarea.value = text.substring(0, start) + field + text.substring(end)
-                                textarea.selectionStart = textarea.selectionEnd = start + field.length
+                                const fieldNames = getFieldNames(localConfig)
+                                const displayName = getDisplayName('dimension', fieldNames, localConfig)
+                                const insertion = `${displayName}: {dimension}`
+                                textarea.value = text.substring(0, start) + insertion + text.substring(end)
+                                textarea.selectionStart = textarea.selectionEnd = start + insertion.length
                                 textarea.focus()
                                 updateConfig('tooltipTemplate', textarea.value)
                               }}>
@@ -1589,9 +1591,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 const start = textarea.selectionStart
                                 const end = textarea.selectionEnd
                                 const text = textarea.value
-                                const field = '{bar1}'
-                                textarea.value = text.substring(0, start) + field + text.substring(end)
-                                textarea.selectionStart = textarea.selectionEnd = start + field.length
+                                const fieldNames = getFieldNames(localConfig)
+                                const displayName = getDisplayName('bar1', fieldNames, localConfig)
+                                const insertion = `${displayName}: {bar1_value}`
+                                textarea.value = text.substring(0, start) + insertion + text.substring(end)
+                                textarea.selectionStart = textarea.selectionEnd = start + insertion.length
                                 textarea.focus()
                                 updateConfig('tooltipTemplate', textarea.value)
                               }}>
@@ -1608,9 +1612,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 const start = textarea.selectionStart
                                 const end = textarea.selectionEnd
                                 const text = textarea.value
-                                const field = '{bar2}'
-                                textarea.value = text.substring(0, start) + field + text.substring(end)
-                                textarea.selectionStart = textarea.selectionEnd = start + field.length
+                                const fieldNames = getFieldNames(localConfig)
+                                const displayName = getDisplayName('bar2', fieldNames, localConfig)
+                                const insertion = `${displayName}: {bar2_value}`
+                                textarea.value = text.substring(0, start) + insertion + text.substring(end)
+                                textarea.selectionStart = textarea.selectionEnd = start + insertion.length
                                 textarea.focus()
                                 updateConfig('tooltipTemplate', textarea.value)
                               }}>
@@ -1627,9 +1633,11 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                                 const start = textarea.selectionStart
                                 const end = textarea.selectionEnd
                                 const text = textarea.value
-                                const field = '{line}'
-                                textarea.value = text.substring(0, start) + field + text.substring(end)
-                                textarea.selectionStart = textarea.selectionEnd = start + field.length
+                                const fieldNames = getFieldNames(localConfig)
+                                const displayName = getDisplayName('line', fieldNames, localConfig)
+                                const insertion = `${displayName}: {line_value}`
+                                textarea.value = text.substring(0, start) + insertion + text.substring(end)
+                                textarea.selectionStart = textarea.selectionEnd = start + insertion.length
                                 textarea.focus()
                                 updateConfig('tooltipTemplate', textarea.value)
                               }}>
@@ -1647,7 +1655,7 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                           <textarea id="tooltip-template"
                             value={localConfig.tooltipTemplate}
                             onChange={(e) => updateConfig('tooltipTemplate', e.target.value)}
-                            placeholder="e.g., {dimension}&#10;{bar1}&#10;{bar2}&#10;{line}"
+                            placeholder="e.g., Period: {dimension}&#10;Sales: {bar1_value}&#10;Budget: {bar2_value}&#10;Profit: {line_value}"
                             rows={5}
                             style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }} />
                           <p className="help-text" style={{ marginTop: 6 }}>
