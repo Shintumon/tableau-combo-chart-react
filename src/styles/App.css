@@ -537,6 +537,13 @@ input[type="number"] {
   width: 100%;
 }
 
+/* Hide native number spinners (we use custom +/- buttons) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 select:focus,
 input[type="text"]:focus,
 input[type="number"]:focus {

@@ -104,16 +104,18 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
     }
     const inputStyle = {
       width: '44px', minWidth: '44px', height: '100%', border: 'none',
-      borderLeft: '1px solid var(--color-border, #e2e5ea)', borderRight: '1px solid var(--color-border, #e2e5ea)',
+      borderLeft: '1px solid var(--color-border, #e2e5ea)',
+      borderRight: suffix ? 'none' : '1px solid var(--color-border, #e2e5ea)',
       borderRadius: 0, textAlign: 'center', fontSize: '12px', fontWeight: 600,
       fontFamily: 'var(--font-mono, monospace)', color: 'var(--color-text, #1a1d23)',
       background: 'var(--color-bg, #fff)', padding: 0, margin: 0, boxShadow: 'none',
       MozAppearance: 'textfield', WebkitAppearance: 'none'
     }
     const suffixStyle = {
-      fontSize: '11px', color: 'var(--color-text-muted, #9ca3af)', padding: '0 6px 0 0',
+      fontSize: '11px', color: 'var(--color-text-muted, #9ca3af)', padding: '0 6px',
       margin: 0, background: 'var(--color-bg, #fff)', lineHeight: '30px',
-      borderRight: '1px solid var(--color-border, #e2e5ea)', whiteSpace: 'nowrap'
+      borderRight: '1px solid var(--color-border, #e2e5ea)', whiteSpace: 'nowrap',
+      display: 'flex', alignItems: 'center'
     }
     return (
       <div style={containerStyle}>
