@@ -358,6 +358,25 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                 </div>
 
                 <div className="divider" />
+                <div className="section-label">Custom Labels</div>
+                <p className="help-text">Override legend labels for each measure. Leave blank to use measure name.</p>
+                <div className="form-group">
+                  <label className="form-label">Bar 1</label>
+                  <input type="text" value={localConfig.legendBar1Label} placeholder="Use measure name"
+                    onChange={(e) => updateConfig('legendBar1Label', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Bar 2</label>
+                  <input type="text" value={localConfig.legendBar2Label} placeholder="Use measure name"
+                    onChange={(e) => updateConfig('legendBar2Label', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Line</label>
+                  <input type="text" value={localConfig.legendLineLabel} placeholder="Use measure name"
+                    onChange={(e) => updateConfig('legendLineLabel', e.target.value)} />
+                </div>
+
+                <div className="divider" />
                 <div className="section-label">Animation</div>
 
                 <label className="check-row">
@@ -1313,22 +1332,6 @@ function SettingsDialog({ config, columns = [], onSave, onApply, onClose, isDial
                     </div>
 
                     <div className="divider" />
-                    <div className="section-label">Custom Labels</div>
-                    <div className="form-group indent">
-                      <label className="form-label">Bar 1</label>
-                      <input type="text" value={localConfig.legendBar1Label} placeholder="Use measure name"
-                        onChange={(e) => updateConfig('legendBar1Label', e.target.value)} />
-                    </div>
-                    <div className="form-group indent">
-                      <label className="form-label">Bar 2</label>
-                      <input type="text" value={localConfig.legendBar2Label} placeholder="Use measure name"
-                        onChange={(e) => updateConfig('legendBar2Label', e.target.value)} />
-                    </div>
-                    <div className="form-group indent">
-                      <label className="form-label">Line</label>
-                      <input type="text" value={localConfig.legendLineLabel} placeholder="Use measure name"
-                        onChange={(e) => updateConfig('legendLineLabel', e.target.value)} />
-                    </div>
                     <FontControls fontKey="legendFont" label="Legend" />
                   </>
                 )}
